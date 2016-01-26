@@ -75,7 +75,7 @@
         var W = size * cs,
             H = size * cs;
         var d3SpAgent = null;// puck of the agent on the grid
-        var freqHuman = 0;// human play frequency
+        var cptHuman = 0;// human play frequency
         var freqAgent = 0;// agent play frequency
         var lhActionTime = 0; // last click by human timer
 
@@ -132,7 +132,7 @@
                     // Click callback for a cell
                     g.on('click', function(ss) {
                         return function() {
-                                freqHuman = freqHuman + 1;
+                                cptHuman = cptHuman + 1;
                                 lhActionTime = new Date().getMilliseconds() - lhActionTime;
                                 cellClicked(ss);
                             } // close over s
@@ -204,6 +204,13 @@
         TemporalAgent.prototype = {
             reset: function(){
                 this.freqAction = 0;
+                this.freqAgentTe = 0;
+                
+                this.cptAgent1 = 0;//
+                this.cptAgent2 = 0;
+                this.currentTime = new Date();
+                this.beginTime = 0;
+                
                 },
             getNumStates: function() {
                 return 2; // Different value of game timer
@@ -212,17 +219,26 @@
                 return 2; // True/False
             },
             getState: function() {
-                var s = [this.freqAction];
+                var s = [this.freqAction, this.freqActionAgentTe];
                 return s;
             },
             sampleNextState: function(a) {   
                 if (a){
-                    freqAgent = freqAgent + 1;
-                    if(freqAgent === 300){
-                        freqAction = (freqHuman *1000 / freqAgent).toFixed(2);
-                        freqHuman = 0;
-                        freqAgent = 0;
-                        alert(freqAction);
+                    this.cptAgent1 = this.cptAgent1 + 1;
+                    this.cptAgent2 = this.cptAgent2 + 1;
+                    if(this.cptAgent1 === 300){
+                        this.freqAction = (this.cptHuman * 1000 / this.cptAgent1).toFixed(2);
+                        this.cptAgent1 = 0;
+                        cptHuman = 0;
+                    }
+                    
+                    if(this.freqTimeAgent === 0){
+                        this.beginTime = this.currentTime.getMilliseconds();
+                        this.cptAgent2 = 0;
+                    }
+                    
+                    if(this.currentTime.getMilliseconds() - this.beginTime >= 20000){
+                            this.freqAgentTe = this.cptAgent2 / (this.currentTime.getMilliseconds() - this.beginTime)
                     }
                 }
             }
