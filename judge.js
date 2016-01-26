@@ -15,6 +15,9 @@ Judge.prototype = {
       if(a1 === 0){
           reward = 5;
       }
+      else if(a2 === 3){
+          reward = 4;
+      }
       else{
           reward = -0.5;
       }
