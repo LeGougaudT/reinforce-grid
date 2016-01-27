@@ -64,6 +64,7 @@
         };
         // Num of color in COLOR 
         var NBCOLOR = 3;
+        var MAX_VALUE_INTEGER = 2000000000;
 
         var env;
         var size = 27;// global size of the grid
@@ -129,7 +130,6 @@
                     g.on('click', function(ss) {
                         return function() {
                                 cptHuman = cptHuman + 1;
-                                lhActionTime = new Date().getMilliseconds() - lhActionTime;
                                 cellClicked(ss);
                             } // close over s
                     }(s));
@@ -195,13 +195,15 @@
         
         // Temporal agent that allows plays or no
         var TemporalAgent = function() {
-            var actionTab = [];
-            var size = 30;
+            cptAgent = 1;// to avoid NaN value (div by 0)
+            actionTab = [];
+            size = 30;
             this.reset();
         }
         TemporalAgent.prototype = {
             reset: function(){
                 this.freqAction = 0;
+                this.freqHumanAgent = 0;
             },
             getNumStates: function() {
                 return 2; // Different value of game timer
@@ -210,20 +212,26 @@
                 return 2; // True/False
             },
             getState: function() {
-                var s = [this.freqAction];
+                var s = [this.freqAction, this.freqHumanAgent];
                 return s;
             },
             sampleNextState: function(a) {
+                if(cptAgent > MAX_VALUE_INTEGER){
+                    cptAgent = Math.round(cptAgent / 2);
+                    cptHuman = Math.round(cptHuman / 2);
+                }
                 if(actionTab.length >= size){
                     actionTab = actionTab.slice(1);
                 }
                 if(a){
+                    cptAgent = cptAgent + 1;
                     actionTab.push(1);
                 }
                 else{
                     actionTab.push(0);
                 }
                 this.freqAction = actionTab.reduce((prev,current) => prev + current) / actionTab.length;
+                this.freqHumanAgent = cptHuman/cptAgent;
             }
         }
         
