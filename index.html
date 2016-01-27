@@ -48,11 +48,9 @@
             margin-left: auto;
             margin-right: auto;
         }
-        
         h2 {
             text-align: center;
         }
-        
         body {
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
         }
@@ -76,9 +74,7 @@
             H = size * cs;
         var d3SpAgent = null;// puck of the agent on the grid
         var cptHuman = 0;// human play frequency
-        var freqAgent = 0;// agent play frequency
-        var lhActionTime = 0; // last click by human timer
-
+        
         // Setup of the main grid
         var ColorGrid = function() {
             this.reset();
@@ -199,19 +195,14 @@
         
         // Temporal agent that allows plays or no
         var TemporalAgent = function() {
+            var actionTab = [];
+            var size = 30;
             this.reset();
         }
         TemporalAgent.prototype = {
             reset: function(){
                 this.freqAction = 0;
-                this.freqAgentTe = 0;
-                
-                this.cptAgent1 = 0;//
-                this.cptAgent2 = 0;
-                this.currentTime = new Date();
-                this.beginTime = 0;
-                
-                },
+            },
             getNumStates: function() {
                 return 2; // Different value of game timer
             },
@@ -219,28 +210,20 @@
                 return 2; // True/False
             },
             getState: function() {
-                var s = [this.freqAction, this.freqActionAgentTe];
+                var s = [this.freqAction];
                 return s;
             },
-            sampleNextState: function(a) {   
-                if (a){
-                    this.cptAgent1 = this.cptAgent1 + 1;
-                    this.cptAgent2 = this.cptAgent2 + 1;
-                    if(this.cptAgent1 === 300){
-                        this.freqAction = (this.cptHuman * 1000 / this.cptAgent1).toFixed(2);
-                        this.cptAgent1 = 0;
-                        cptHuman = 0;
-                    }
-                    
-                    if(this.freqTimeAgent === 0){
-                        this.beginTime = this.currentTime.getMilliseconds();
-                        this.cptAgent2 = 0;
-                    }
-                    
-                    if(this.currentTime.getMilliseconds() - this.beginTime >= 20000){
-                            this.freqAgentTe = this.cptAgent2 / (this.currentTime.getMilliseconds() - this.beginTime)
-                    }
+            sampleNextState: function(a) {
+                if(actionTab.length >= size){
+                    actionTab = actionTab.slice(1);
                 }
+                if(a){
+                    actionTab.push(1);
+                }
+                else{
+                    actionTab.push(0);
+                }
+                this.freqAction = actionTab.reduce((prev,current) => prev + current) / actionTab.length;
             }
         }
         
