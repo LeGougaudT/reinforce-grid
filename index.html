@@ -533,9 +533,7 @@
                         actionAgent = teAgent.act(stateAgent);
                         envTeAgent.sampleNextState(actionAgent);
                         
-                        // ComputeRewardAT
-                        if(actionAgent) reward = 10;
-                        else reward = -0.5;
+                        rewardTemporal = judge.getRewardTemporal();
                         
                         if(actionAgent){
                             
@@ -554,7 +552,8 @@
                             stateAgent3 = envSpAgent3.getState();
                             actionAgent3 = spAgent3.act(stateAgent3);
 
-                            reward = judge.getReward(actionAgent1, actionAgent2, actionAgent3);
+                            //rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3);
+                            rewardSpatial = 0;
                             // TEST//
 //                            if (actionAgent1 * 9 * 9 + actionAgent2 * 3 * 3 + actionAgent3 == 81) {
 //                                reward += 5;
@@ -565,18 +564,18 @@
                             cc = getCell(actionAgent1,1) + getCell(actionAgent2,2) + getCell(actionAgent3,3);// ONLY FOR SIZE = 27
                             cellClicked(cc);
                             updatePuck(cc, reward);
-                            
+                        }
+                        
+                        if(actionAgent){
+                            reward = rewardTemporal + rewardSpatial;
                             spAgent1.learn(reward);
                             spAgent2.learn(reward);
                             spAgent3.learn(reward);
                         }
-                        
-//                        if(actionAgent){
-//                            reward_smooth(RewardAS,RewardAT);
-//                            spAgent1.learn(reward);
-//                            spAgent2.learn(reward);
-//                            spAgent3.learn(reward);
-                         teAgent.learn(reward);
+                        else{
+                             reward = rewardTemporal;
+                         }
+                        teAgent.learn(reward);
                          
                         if (smooth_reward == null) {
                             smooth_reward = reward;
@@ -610,7 +609,13 @@
                 sid = -1;
             }
         }
-
+        
+        var env;
+        var envTeAgent;
+        var envSpAgent1;
+        var envSpAgent2;
+        var envSpAgent3;
+        
         function start() {
             env = new ColorGrid();
             envTeAgent = new TemporalAgent();
@@ -618,7 +623,7 @@
             envSpAgent2 = new SpatialAgent();
             envSpAgent3 = new SpatialAgent();
 
-            judge = new J.Judge(env);
+            judge = new J.Judge(env, envTeAgent, envSpAgent1, envSpAgent2, envSpAgent3);
             
             eval($("#spec").val())
             teAgent = new RL.DQNAgent(envTeAgent, spec);
