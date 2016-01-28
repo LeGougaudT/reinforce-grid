@@ -64,7 +64,7 @@
         };
         // Num of color in COLOR 
         var NBCOLOR = 3;
-        var MAX_VALUE_INTEGER = 2000000000;
+        var MAX_VALUE_INTEGER = 2*Math.pow(10,9);
 
         var env;
         var size = 27;// global size of the grid
@@ -82,6 +82,10 @@
         }
         ColorGrid.prototype = {
             reset: function() {
+                this.white = size * size;
+                this.red = 0;
+                this.blue = 0;
+                
                 // Set all color to white at the beginning
                 var Color = [];
                 for(var i = 0; i < size; i++){
@@ -274,12 +278,18 @@
             switch (nColor) {
                 case 0:
                     r.attr('fill', '#ffffff');
+                    env.blue = env.blue - 1;
+                    env.white = env.white + 1;
                     break;
                 case 1:
                     r.attr('fill', '#ff0000');
+                    env.white = env.white - 1;
+                    env.red = env.red + 1;
                     break;
                 case 2:
                     r.attr('fill', '#0000ff');
+                    env.red = env.red - 1;
+                    env.blue = env.blue + 1;
                     break;
                 default:
                     r.attr('fill', '#000000');
@@ -552,7 +562,7 @@
                             stateAgent3 = envSpAgent3.getState();
                             actionAgent3 = spAgent3.act(stateAgent3);
 
-                            //rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3);
+                            rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3);
                             rewardSpatial = 0;
                             // TEST//
 //                            if (actionAgent1 * 9 * 9 + actionAgent2 * 3 * 3 + actionAgent3 == 81) {
