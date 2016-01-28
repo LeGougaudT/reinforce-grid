@@ -39,21 +39,17 @@ var J = {};
         },
         getRewardSpatial:function(a1,a2,a3){
             this.pushValue(a1,a2,a3);
-            var entWhite = this.process(this.white);
-            var entRed = this.process(this.red);
-            var entBlue = this.process(this.blue);
-            var entA1 = this.process(this.a1);
-            var entA2 = this.process(this.a2);
-            var entA3 = this.process(this.a3);
+            var entWhite = this.computeEntropy(this.white, 9);
+            var entRed = this.computeEntropy(this.red, 9);
+            var entBlue = this.computeEntropy(this.blue, 9);
+            var entA1 = this.computeEntropy(this.a1, 8);
+            var entA2 = this.computeEntropy(this.a2, 8);
+            var entA3 = this.computeEntropy(this.a3, 8);
             
             //Global entropy TODO
             
             var reward;
             return reward; 
-        },
-        process:function(tab){
-          this.tabOccur = this.createHistogram(tab);
-          return this.computeEntropy(this.tabOccur);    
         },
         createHistogram:function(tab){
             var a = [], b = [], prev;
@@ -69,14 +65,25 @@ var J = {};
             }
             return b;
         },
-        computeEntropy:function(tab){
-            var somme = 0;
+        computeEntropy:function(tab, n){
+            var tabTest = [1,1,1,1,1,1,1,1,1,1,1,1,1,0];
+            var entropy = 0;
             var value = 0;
-            for(var i = 0;i < tab.length;i++){ //Histogramme des niveaux de gris entre 0 et 256 donc
-               value = tab[i] / tab.length;
-               somme = somme -  value*(Math.log(value)/Math.log(2));
+            var cpt = 0;
+            for(var i = 0;i <= n;i++){
+                cpt = 0;
+                for(var j = 0;j < tabTest.length;j++){
+                    if(tabTest[j] === i){
+                        cpt = cpt + 1;
+                    }
+                }
+                if(cpt !== 0){
+                    value = cpt / tabTest.length;
+                    entropy = entropy -  value*(Math.log(value)/Math.log(2));
+                }
            }
-           return somme;
+           alert(entropy);
+           return entropy;
         },
         pushValue:function(a1,a2,a3){
             this.white.push(this.env.white);
