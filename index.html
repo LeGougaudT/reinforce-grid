@@ -201,7 +201,7 @@
         var TemporalAgent = function() {
             cptAgent = 1;// to avoid NaN value (div by 0)
             actionTab = [];
-            size = 30;
+            sizeEnt = 30;
             this.reset();
         }
         TemporalAgent.prototype = {
@@ -224,7 +224,7 @@
                     cptAgent = Math.round(cptAgent / 2);
                     cptHuman = Math.round(cptHuman / 2);
                 }
-                if(actionTab.length >= size){
+                if(actionTab.length >= sizeEnt){
                     actionTab = actionTab.slice(1);
                 }
                 if(a){
@@ -551,17 +551,17 @@
                             updateAgent1Data();
                             stateAgent1 = envSpAgent1.getState();
                             actionAgent1 = spAgent1.act(stateAgent1);
-
+                            
                             // Agent 2
                             updateAgent2Data(actionAgent1);
                             stateAgent2 = envSpAgent2.getState();
                             actionAgent2 = spAgent2.act(stateAgent2);
-
+                            
                             // Agent 3            
                             updateAgent3Data(actionAgent1, actionAgent2);
                             stateAgent3 = envSpAgent3.getState();
                             actionAgent3 = spAgent3.act(stateAgent3);
-
+                                                        
                             rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3);
                             rewardSpatial = 0;
                             // TEST//
