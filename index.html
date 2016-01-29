@@ -76,8 +76,10 @@
         var d3SpAgent = null;// puck of the agent on the grid
         var cptHuman = 0;// human play frequency
         
+        
         // Setup of the main grid
         var ColorGrid = function() {
+            this.cClick = 0;
             this.reset();
         }
         ColorGrid.prototype = {
@@ -134,6 +136,7 @@
                     g.on('click', function(ss) {
                         return function() {
                                 cptHuman = cptHuman + 1;
+                                env.cClick=ss;
                                 cellClicked(ss);
                             } // close over s
                     }(s));
@@ -201,7 +204,7 @@
         var TemporalAgent = function() {
             cptAgent = 1;// to avoid NaN value (div by 0)
             actionTab = [];
-            sizeEnt = 30;
+            sizeEnt = 3;
             this.reset();
         }
         TemporalAgent.prototype = {
@@ -403,7 +406,6 @@
                     }
                 }
             }
-            envSpAgent1.area = -1;
         }
         
         var updateAgent2Data = function(a1){
@@ -473,7 +475,6 @@
                     }
                 }
             }
-            envSpAgent2.area = s;
         }
         
         var updateAgent3Data = function(a1, a2){
@@ -500,7 +501,6 @@
                     }
                 }
             }
-            envSpAgent3.area = s;
         }
         
         var getCell = function(v, n){
@@ -551,19 +551,20 @@
                             updateAgent1Data();
                             stateAgent1 = envSpAgent1.getState();
                             actionAgent1 = spAgent1.act(stateAgent1);
+                            envSpAgent1.area = actionAgent1;
                             
                             // Agent 2
                             updateAgent2Data(actionAgent1);
                             stateAgent2 = envSpAgent2.getState();
                             actionAgent2 = spAgent2.act(stateAgent2);
+                            envSpAgent2.area = actionAgent2;
                             
                             // Agent 3            
                             updateAgent3Data(actionAgent1, actionAgent2);
                             stateAgent3 = envSpAgent3.getState();
                             actionAgent3 = spAgent3.act(stateAgent3);
-                                                        
-                            rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3);
-                            rewardSpatial = 0;
+                            envSpAgent3.area = actionAgent3;            
+                
                             // TEST//
 //                            if (actionAgent1 * 9 * 9 + actionAgent2 * 3 * 3 + actionAgent3 == 81) {
 //                                reward += 5;
@@ -572,8 +573,9 @@
 //                            }
 
                             cc = getCell(actionAgent1,1) + getCell(actionAgent2,2) + getCell(actionAgent3,3);// ONLY FOR SIZE = 27
+                            rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3, cc);
                             cellClicked(cc);
-                            updatePuck(cc, reward);
+                            updatePuck(cc, rewardSpatial);
                         }
                         
                         if(actionAgent){
@@ -723,8 +725,8 @@
                     max: nflot
                 },
                 yaxis: {
-                    min: -2,
-                    max: 1
+                    min: -3,
+                    max: 10
                 }
             });
             setInterval(function() {
@@ -751,7 +753,7 @@
         }
 
         function goslow() {
-            steps_per_tick = 1;
+            steps_per_tick = 0.2;
         }
 
         var jaxrendered = false;

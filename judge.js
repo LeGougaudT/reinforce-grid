@@ -9,6 +9,9 @@ var J = {};
         this.envSpAgent2 = envSpAgent2; // store pointer to environment
         this.envSpAgent3 = envSpAgent3; // store pointer to environment
         this.TAB_MAX = 50;
+        this.xCell0 = null;
+        this.yCell0 = null;
+        this.d0 = 0;
         this.reset();
     };
     Judge.prototype = {
@@ -34,22 +37,44 @@ var J = {};
             var freqHumanAgent = state[1];
             this.freqAction.push(freqAction);
             this.freqHumanAgent.push(freqHumanAgent);
-            
-            reward = freqHumanAgent;
-            return reward; 
+            //reward - pour freqAction
+            if(this.freqAction[this.freqAction.length-2]>=this.freqAction[this.freqAction.length-1]){
+                reward = 0;
+            }else{
+               reward = 0;
+            }
+            return reward;
         },
-        getRewardSpatial:function(a1,a2,a3){
+        getRewardSpatial:function(a1,a2,a3,cell){
+            var reward;
             this.pushValue(a1,a2,a3);
+            var cellHuman = this.env.cClick;
+            var xCellH1 = this.env.stox(cellHuman);
+            var yCellH1 = this.env.stoy(cellHuman);
+
             var entWhite = this.computeEntropy(this.white, 729);
             var entRed = this.computeEntropy(this.red, 729);
             var entBlue = this.computeEntropy(this.blue, 729);
+            var xCell1 = this.env.stox(cell);
+            var yCell1 = this.env.stoy(cell);
+            
+            // Compute distance
+            var d1 = Math.sqrt(Math.pow(xCellH1 - xCell1,2) + Math.pow(yCellH1 - yCell1,2));
+            reward = -d1;
+            
+            if(xCell1 === this.xCell0 && yCell1 === this.yCell0){
+                reward-=0.5;
+            }
+            this.xCell0 = xCell1;
+            this.yCell0 = yCell1;        
+            this.d0 = d1;
+            
+            //Global entropy TODO
             var entA1 = this.computeEntropy(this.a1, 8);
             var entA2 = this.computeEntropy(this.a2, 8);
             var entA3 = this.computeEntropy(this.a3, 8);
             
-            //Global entropy TODO
             
-            var reward;
             return reward; 
         },
         createHistogram:function(tab){
