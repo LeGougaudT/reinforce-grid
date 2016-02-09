@@ -32,11 +32,34 @@
   <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
   -->
 
+  <!-- Global var -->
+    <script type='text/javascript'>
+      // Enum for color
+      var COLOR = {
+          WHITE: 0,
+          RED: 1,
+          BLUE: 2
+      };
+      // Num of color in COLOR 
+      var NBCOLOR = 3;
+      var env;
+      var size = 27;// global size of the grid
+      var rs = {}; // all svg/g rectangle
+      var trs = {}; // all svg/g text reward
+      var cs = 30;// size in pi of a cell
+      var W = size * cs,
+          H = size * cs;
+      var d3SpAgentA = null;// puck of the agent A on the grid
+      var d3SpAgentB = null;// puck of the agent B on the grid
+      var cptHuman = 0;// human play frequency
+  </script>
+
   <!-- rljs -->
   <script type="text/javascript" src="lib/rl.js"></script>
 
-  <!-- rljs -->
+  <!-- other -->
   <script type="text/javascript" src="judge.js"></script>
+  <script type="text/javascript" src="agent.js"></script>
   
   <!-- flotjs -->
   <script src="external/jquery.flot.min.js"></script>
@@ -56,25 +79,7 @@
         }
     </style>
     <script type="application/javascript">
-        // Enum for color
-        var COLOR = {
-            WHITE: 0,
-            RED: 1,
-            BLUE: 2
-        };
-        // Num of color in COLOR 
-        var NBCOLOR = 3;
-        var MAX_VALUE_INTEGER = 2*Math.pow(10,9);
-
-        var env;
-        var size = 27;// global size of the grid
-        var rs = {}; // all svg/g rectangle
-        var trs = {}; // all svg/g text reward
-        var cs = 30;// size in pi of a cell
-        var W = size * cs,
-            H = size * cs;
-        var d3SpAgent = null;// puck of the agent on the grid
-        var cptHuman = 0;// human play frequency
+        
         
         
         // Setup of the main grid
@@ -84,20 +89,24 @@
         }
         ColorGrid.prototype = {
             reset: function() {
-                this.white = size * size;
+                this.white = 0;
                 this.red = 0;
                 this.blue = 0;
                 
-                // Set all color to white at the beginning
+                // init double dimensional array
                 var Color = [];
                 for(var i = 0; i < size; i++){
                     Color[i] = [];
                 }
 
+                // fill with random color
                 for (var i = 0; i < size; i++) {
                     for (var j = 0; j < size; j++) {
-                        Color[i][j] = COLOR.WHITE;
-                    }
+                        Color[i][j] = Math.floor(Math.random() * (3)) ;
+                        if(Color[i][j] === 0) this.white = this.white+1;
+                        else if(Color[i][j] === 1) this.red = this.red+1;
+                        else if(Color[i][j] === 2) this.blue = this.blue+1;
+                    }    
                 }
                 this.Color = Color;
             },
@@ -147,7 +156,7 @@
                         .attr('y', ycoord)
                         .attr('height', cs)
                         .attr('width', cs)
-                        .attr('fill', '#ffffff')
+                        .attr('fill', getColor(env.Color[x][y]))
                         .attr('stroke', 'black')
                         .attr('stroke-width', 2);
                     rs[s] = r;
@@ -164,23 +173,34 @@
                     trs[s] = tr;
                 }
             }
-            // Draw the puck
-            d3SpAgent = svg.append('circle')
+            // Draw the puck A
+            d3SpAgentA = svg.append('circle')
                 .attr('cx', cs / 2)
                 .attr('cy', cs / 2)
                 .attr('r', 10)
                 .attr('fill', '#FF0')
                 .attr('stroke', '#000')
-                .attr('id', 'puck');
+                .attr('id', 'puckA');
+        
+            // Draw the puck B
+            d3SpAgentB = svg.append('circle')
+                .attr('cx', (cs * 13) / 2)
+                .attr('cy', (cs * 13) / 2)
+                .attr('r', 10)
+                .attr('fill', '#AEF')
+                .attr('stroke', '#000')
+                .attr('id', 'puckB');
         }
         
         // Update agent position on grid view
-        var updatePuck = function(s, r) {
+        var updatePuck = function(s, n, r) {
             var ppx = env.stox(s);
-            var ppy = env.stoy(s);
-
-            d3SpAgent.attr('cx', ppx * cs + cs / 2).attr('cy', ppy * cs + cs / 2);
-            
+            var ppy = env.stoy(s);    
+            if(n === 1){
+                d3SpAgentA.attr('cx', ppx * cs + cs / 2).attr('cy', ppy * cs + cs / 2);
+            }else {
+                d3SpAgentB.attr('cx', ppx * cs + cs / 2).attr('cy', ppy * cs + cs / 2);
+            }
             // Color of the puck depends on the reward
             //            // color spAgent by reward
             //            var vv = r + 0.5;
@@ -200,72 +220,7 @@
             //            d3spAgent.attr('fill', vcol);
         }
         
-        // Temporal agent that allows plays or no
-        var TemporalAgent = function() {
-            cptAgent = 1;// to avoid NaN value (div by 0)
-            actionTab = [];
-            sizeEnt = 3;
-            this.reset();
-        }
-        TemporalAgent.prototype = {
-            reset: function(){
-                this.freqAction = 0;
-                this.freqHumanAgent = 0;
-            },
-            getNumStates: function() {
-                return 2; // Different value of game timer
-            },
-            getMaxNumActions: function() {
-                return 2; // True/False
-            },
-            getState: function() {
-                var s = [this.freqAction, this.freqHumanAgent];
-                return s;
-            },
-            sampleNextState: function(a) {
-                if(cptAgent > MAX_VALUE_INTEGER){
-                    cptAgent = Math.round(cptAgent / 2);
-                    cptHuman = Math.round(cptHuman / 2);
-                }
-                if(actionTab.length >= sizeEnt){
-                    actionTab = actionTab.slice(1);
-                }
-                if(a){
-                    cptAgent = cptAgent + 1;
-                    actionTab.push(1);
-                }
-                else{
-                    actionTab.push(0);
-                }
-                this.freqAction = actionTab.reduce((prev,current) => prev + current) / actionTab.length;
-                this.freqHumanAgent = cptHuman/cptAgent;
-            }
-        }
-        
-        // Spatial agent that play on cell
-        var SpatialAgent = function() {
-            this.reset();
-        }
-        SpatialAgent.prototype = {
-                reset: function() {
-                    // Init of states
-                    this.white = 0;            
-                    this.red = 0;
-                    this.blue = 0;
-                    this.area = 0;
-                },
-                getNumStates: function() {
-                    return 4; // Different color of cell in view
-                },
-                getMaxNumActions: function() {
-                    return 9; // cell number
-                },
-                getState: function() {
-                    var s = [this.white, this.red, this.blue, this.area];
-                    return s;
-                },
-            }
-            // Return next color in enum COLOR
+        // Return next color in enum COLOR
         var nextColor = function(color) {
             return (color + 1) % NBCOLOR;
         }
@@ -280,24 +235,22 @@
             
             switch (nColor) {
                 case 0:
-                    r.attr('fill', '#ffffff');
                     env.blue = env.blue - 1;
                     env.white = env.white + 1;
                     break;
                 case 1:
-                    r.attr('fill', '#ff0000');
                     env.white = env.white - 1;
                     env.red = env.red + 1;
                     break;
                 case 2:
-                    r.attr('fill', '#0000ff');
                     env.red = env.red - 1;
                     env.blue = env.blue + 1;
                     break;
                 default:
-                    r.attr('fill', '#000000');
                     break;
             }
+            
+            r.attr('fill', getColor(nColor));
 
             // skip set up of reward indication
             // write reward texts
@@ -308,11 +261,30 @@
             //          }
         }
         
-        var updateAgent1Data = function(){
+        var getColor = function(nColor){
+            var color = '';
+            switch (nColor) {
+                case 0:
+                    color = '#ffffff';
+                    break;
+                case 1:
+                    color = '#ff0000';
+                    break;
+                case 2:
+                    color = '#0000ff';
+                    break;
+                default:
+                    color =  '#000000';
+                    break;
+            }
+            return color;
+        }
+        
+        var updateAgent1Data = function(envSpAgent1){
             envSpAgent1.white = 0;
             envSpAgent1.red = 0;
             envSpAgent1.blue = 0;
-            
+
             var white = 0;
             var red = 0;
             var blue = 0;
@@ -355,7 +327,7 @@
                     }
                 }
             }
-            
+
             p = 0;
             q = 0;
             for(var i = 0; i < 7; i=i+3){
@@ -390,7 +362,7 @@
                     }
                 }
             }
-            
+
             for(var a = 0; a<3; a++){
                 for(var b = 0; b<3; b++){
                     switch(matTmp[a][b]){
@@ -407,12 +379,12 @@
                 }
             }
         }
-        
-        var updateAgent2Data = function(a1){
+
+        var updateAgent2Data = function(envSpAgent2,a1){
             envSpAgent2.white = 0;
             envSpAgent2.red = 0;
             envSpAgent2.blue = 0;
-            
+
             var s = getCell(a1, 1);
             var xs = env.stox(s);
             var ys = env.stoy(s);
@@ -424,7 +396,7 @@
             for(var i = 0; i < 3; i++){
                     matTmp[i] = [];
                 }
-                
+
             p = 0;
             q = 0;
             for(var i = xs; i < (xs+9); i=i+3){
@@ -459,7 +431,7 @@
                     }
                 }
             }
-            
+
             for(var a = 0; a<3; a++){
                 for(var b = 0; b<3; b++){
                     switch(matTmp[a][b]){
@@ -476,16 +448,16 @@
                 }
             }
         }
-        
-        var updateAgent3Data = function(a1, a2){
+
+        var updateAgent3Data = function(envSpAgent3, a1, a2){
             envSpAgent3.white = 0;
             envSpAgent3.red = 0;
             envSpAgent3.blue = 0;
-            
+
             var s = getCell(a1, 1) + getCell(a2,2);
             var xs = env.stox(s);
             var ys = env.stoy(s);
-            
+
             for(var a = xs; a<(xs+3); a++){
                 for(var b = ys; b<(ys+3); b++){
                     switch(env.Color[a][b]){
@@ -502,7 +474,7 @@
                 }
             }
         }
-        
+
         var getCell = function(v, n){
             var ret = 0;
             switch(n){
@@ -527,8 +499,9 @@
         
         var steps_per_tick = 1;
         var sid = -1;
-        var actionAgent, actionAgent1, actionAgent2, actionAgent3, stateAgent, stateAgent1, stateAgent2, stateAgent3;
-        var cc; // cell clicked
+        var actionAgentA, actionAgentA1, actionAgentA2, actionAgentA3, stateAgentA, stateAgentA1, stateAgentA2, stateAgentA3;
+        var actionAgentB, actionAgentB1, actionAgentB2, actionAgentB3, stateAgentB, stateAgentB1, stateAgentB2, stateAgentB3;
+        var ccA, ccB; // cell clicked
         var smooth_reward_history = [];
         var smooth_reward = null;
         var flott = 0;
@@ -539,55 +512,91 @@
                     var obs;
                     for (var k = 0; k < steps_per_tick; k++) {
                         // Agent temporel
-                        stateAgent = envTeAgent.getState();
-                        actionAgent = teAgent.act(stateAgent);
-                        envTeAgent.sampleNextState(actionAgent);
+                        stateAgentA = envTeAgentA.getState();
+                        actionAgentA = teAgentA.act(stateAgentA);
+                        envTeAgentA.sampleNextState(actionAgentA);
                         
-                        rewardTemporal = judge.getRewardTemporal();
+                        rewardTemporal = judgeA.getRewardTemporal();
                         
-                        if(actionAgent){
+                        if(actionAgentA){
                             
-                            // Agent 1
-                            updateAgent1Data();
-                            stateAgent1 = envSpAgent1.getState();
-                            actionAgent1 = spAgent1.act(stateAgent1);
-                            envSpAgent1.area = actionAgent1;
+                            // Agent A1
+                            updateAgent1Data(envSpAgentA1);
+                            stateAgentA1 = envSpAgentA1.getState();
+                            actionAgentA1 = spAgentA1.act(stateAgentA1);
+                            envSpAgentA1.area = actionAgentA1;
                             
-                            // Agent 2
-                            updateAgent2Data(actionAgent1);
-                            stateAgent2 = envSpAgent2.getState();
-                            actionAgent2 = spAgent2.act(stateAgent2);
-                            envSpAgent2.area = actionAgent2;
+                            // Agent A2
+                            updateAgent2Data(envSpAgentA2, actionAgentA1);
+                            stateAgentA2 = envSpAgentA2.getState();
+                            actionAgentA2 = spAgentA2.act(stateAgentA2);
+                            envSpAgentA2.area = actionAgentA2;
                             
-                            // Agent 3            
-                            updateAgent3Data(actionAgent1, actionAgent2);
-                            stateAgent3 = envSpAgent3.getState();
-                            actionAgent3 = spAgent3.act(stateAgent3);
-                            envSpAgent3.area = actionAgent3;            
-                
-                            // TEST//
-//                            if (actionAgent1 * 9 * 9 + actionAgent2 * 3 * 3 + actionAgent3 == 81) {
-//                                reward += 5;
-//                            } else {
-//                                reward -= 0.5;
-//                            }
-
-                            cc = getCell(actionAgent1,1) + getCell(actionAgent2,2) + getCell(actionAgent3,3);// ONLY FOR SIZE = 27
-                            rewardSpatial = judge.getRewardSpatial(actionAgent1, actionAgent2, actionAgent3, cc);
-                            cellClicked(cc);
-                            updatePuck(cc, rewardSpatial);
+                            // Agent A3            
+                            updateAgent3Data(envSpAgentA3, actionAgentA1, actionAgentA2);
+                            stateAgentA3 = envSpAgentA3.getState();
+                            actionAgentA3 = spAgentA3.act(stateAgentA3);
+                            envSpAgentA3.area = actionAgentA3;
+                            
+                            ccA = getCell(actionAgentA1,1) + getCell(actionAgentA2,2) + getCell(actionAgentA3,3);// ONLY FOR SIZE = 27
+                            cellClicked(ccA);
+                            rewardSpatial = judgeA.getRewardSpatial(actionAgentA1, actionAgentA2, actionAgentA3, ccA);
+                            updatePuck(ccA, 1, 0);
                         }
                         
-                        if(actionAgent){
+                        if(actionAgentA){
                             reward = rewardTemporal + rewardSpatial;
-                            spAgent1.learn(reward);
-                            spAgent2.learn(reward);
-                            spAgent3.learn(reward);
+                            spAgentA1.learn(reward);
+                            spAgentA2.learn(reward);
+                            spAgentA3.learn(reward);
                         }
                         else{
                              reward = rewardTemporal;
                          }
-                        teAgent.learn(reward);
+                        teAgentA.learn(reward);
+                        
+                        stateAgentB = envTeAgentB.getState();
+                        actionAgentB = teAgentB.act(stateAgentB);
+                        envTeAgentB.sampleNextState(actionAgentB);
+                        
+                        rewardTemporal = judgeB.getRewardTemporal();
+                        
+                        if(actionAgentB){
+                            
+                            // Agent 1
+                            updateAgent1Data(envSpAgentB1);
+                            stateAgentB1 = envSpAgentB1.getState();
+                            actionAgentB1 = spAgentB1.act(stateAgentB1);
+                            envSpAgentB1.area = actionAgentB1;
+                            
+                            // Agent 2
+                            updateAgent2Data(envSpAgentB2, actionAgentB1);
+                            stateAgentB2 = envSpAgentB2.getState();
+                            actionAgentB2 = spAgentB2.act(stateAgentB2);
+                            envSpAgentB2.area = actionAgentB2;
+                            
+                            // Agent 3            
+                            updateAgent3Data(envSpAgentB3, actionAgentB1, actionAgentB2);
+                            stateAgentB3 = envSpAgentB3.getState();
+                            actionAgentB3 = spAgentB3.act(stateAgentB3);
+                            envSpAgentB3.area = actionAgentB3;
+                            
+                            ccB = getCell(actionAgentB1,1) + getCell(actionAgentB2,2) + getCell(actionAgentB3,3);// ONLY FOR SIZE = 27
+                            cellClicked(ccB);
+                            rewardSpatial = judgeB.getRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
+                            updatePuck(ccB, 2, 0);
+                        }
+                        
+                        if(actionAgentB){
+                            reward = rewardTemporal + rewardSpatial;
+                            spAgentB1.learn(reward);
+                            spAgentB2.learn(reward);
+                            spAgentB3.learn(reward);
+                        }
+                        else{
+                             reward = rewardTemporal;
+                         }
+                        teAgentB.learn(reward);
                          
                         if (smooth_reward == null) {
                             smooth_reward = reward;
@@ -607,11 +616,11 @@
                     }
                     
 
-                    if (typeof teAgent.expi !== 'undefined') {
-                        $("#expi").html(spAgent1.expi);
+                    if (typeof teAgentA.expi !== 'undefined') {
+                        $("#expi").html(spAgentA1.expi);
                     }
-                    if (typeof teAgent.tderror !== 'undefined') {
-                        $("#tde").html(spAgent1.tderror.toFixed(3));
+                    if (typeof teAgentA.tderror !== 'undefined') {
+                        $("#tde").html(spAgentA1.tderror.toFixed(3));
                     }
                     // $("#tdest").html('tderror: ' + spAgent1.tderror_estimator.getMean().toFixed(4) + ' +/- ' + spAgent1.tderror_estimator.getStd().toFixed(4));
 
@@ -623,43 +632,59 @@
         }
         
         var env;
-        var envTeAgent;
-        var envSpAgent1;
-        var envSpAgent2;
-        var envSpAgent3;
+        var envTeAgentA;
+        var envSpAgentA1;
+        var envSpAgentA2;
+        var envSpAgentA3;
+        
+        var envTeAgentB;
+        var envSpAgentB1;
+        var envSpAgentB2;
+        var envSpAgentB3;
         
         function start() {
             env = new ColorGrid();
-            envTeAgent = new TemporalAgent();
-            envSpAgent1 = new SpatialAgent();
-            envSpAgent2 = new SpatialAgent();
-            envSpAgent3 = new SpatialAgent();
+            envTeAgentA = new TemporalAgent();
+            envSpAgentA1 = new SpatialAgent();
+            envSpAgentA2 = new SpatialAgent();
+            envSpAgentA3 = new SpatialAgent();
+            
+            envTeAgentB = new TemporalAgent();
+            envSpAgentB1 = new SpatialAgent();
+            envSpAgentB2 = new SpatialAgent();
+            envSpAgentB3 = new SpatialAgent();
 
-            judge = new J.Judge(env, envTeAgent, envSpAgent1, envSpAgent2, envSpAgent3);
+            judgeA = new J.Judge(env, envTeAgentA, envSpAgentA1, envSpAgentA2, envSpAgentA3);
+            judgeB = new J.Judge(env, envTeAgentB, envSpAgentB1, envSpAgentB2, envSpAgentB3);
             
             eval($("#spec").val())
-            teAgent = new RL.DQNAgent(envTeAgent, spec);
-            spAgent1 = new RL.DQNAgent(envSpAgent1, spec);
-            spAgent2 = new RL.DQNAgent(envSpAgent2, spec);
-            spAgent3 = new RL.DQNAgent(envSpAgent3, spec);
+            teAgentA = new RL.DQNAgent(envTeAgentA, spec);
+            spAgentA1 = new RL.DQNAgent(envSpAgentA1, spec);
+            spAgentA2 = new RL.DQNAgent(envSpAgentA2, spec);
+            spAgentA3 = new RL.DQNAgent(envSpAgentA3, spec);
+            
+            teAgentB = new RL.DQNAgent(envTeAgentB, spec);
+            spAgentB1 = new RL.DQNAgent(envSpAgentB1, spec);
+            spAgentB2 = new RL.DQNAgent(envSpAgentB2, spec);
+            spAgentB3 = new RL.DQNAgent(envSpAgentB3, spec);
             
             initDraw();
             initFlot();
 
-            // slider sets envSpAgent1 epsilon
+            // slider sets envSpAgentA1 epsilon
             $("#slider").slider({
                 min: 0,
                 max: 1,
-                value: spAgent1.epsilon,
+                value: spAgentA1.epsilon,
                 step: 0.01,
                 slide: function(event, ui) {
-                    spAgent1.epsilon = ui.value;
-                    spAgent2.epsilon = ui.value;
-                    spAgent3.epsilon = ui.value;
+                    spAgentA1.epsilon = ui.value;
+                    spAgentA2.epsilon = ui.value;
+                    spAgentA3.epsilon = ui.value;
                     $("#eps").html(ui.value.toFixed(2));
                 }
             });
-            $("#eps").html(spAgent1.epsilon.toFixed(2));
+            $("#eps").html(spAgentA1.epsilon.toFixed(2));
 
             // togglelearn(); // start
 
@@ -672,27 +697,32 @@
 
         function resetAgent() {
             eval($("#spec").val());
-            teAgent = new RL.DQNAgent(envTeAgent, spec);
-            spAgent1 = new RL.DQNAgent(envSpAgent1, spec);
-            spAgent2 = new RL.DQNAgent(envSpAgent2, spec);
-            spAgent3 = new RL.DQNAgent(envSpAgent3, spec);
+            teAgentA = new RL.DQNAgent(envTeAgentA, spec);
+            spAgentA1 = new RL.DQNAgent(envSpAgentA1, spec);
+            spAgentA2 = new RL.DQNAgent(envSpAgentA2, spec);
+            spAgentA3 = new RL.DQNAgent(envSpAgentA3, spec);
+            
+            teAgentB = new RL.DQNAgent(envTeAgentB, spec);
+            spAgentB1 = new RL.DQNAgent(envSpAgentB1, spec);
+            spAgentB2 = new RL.DQNAgent(envSpAgentB2, spec);
+            spAgentB3 = new RL.DQNAgent(envSpAgentB3, spec);
         }
 
         function loadAgent() {
             $.getJSON("spAgentzoo/puckspAgent.json", function(data) {
-                spAgent1.fromJSON(data); // corss your fingers...
+                spAgentA1.fromJSON(data); // corss your fingers...
                 // set epsilon to be much lower for more optimal behavior
-                spAgent1.epsilon = 0.05;
-                $("#slider").slider('value', spAgent1.epsilon);
-                $("#eps").html(spAgent1.epsilon.toFixed(2));
+                spAgentA1.epsilon = 0.05;
+                $("#slider").slider('value', spAgentA1.epsilon);
+                $("#eps").html(spAgentA1.epsilon.toFixed(2));
                 // kill learning rate to not learn
-                spAgent1.alpha = 0;
+                spAgentA1.alpha = 0;
             });
         }
     
         // function saveAgent() {
         //  $("#mysterybox").fadeIn();
-        //  $("#mysterybox").val(JSON.stringify(envSpAgent1.toJSON()));
+        //  $("#mysterybox").val(JSON.stringify(envSpAgentA1.toJSON()));
         // }
 
         // For plot stuff

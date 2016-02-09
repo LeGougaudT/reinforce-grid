@@ -21,14 +21,22 @@ var J = {};
             this.freqAction = [];
 
             //Spatial env history
-            this.white = [];
-            this.red = [];
-            this.blue = [];
+            this.histWhite = [];
+            this.initTab(this.histWhite, 4);
+            this.histRed = [];
+            this.initTab(this.histRed, 4);
+            this.histBlue = [];
+            this.initTab(this.histBlue, 4);
             this.a1 = [];
             this.a2 = [];
             this.a3 = [];
             
             this.tabOccur = [];
+        },
+        initTab:function(tab, nb){
+            for(var i = 0; i < nb; i++){
+                tab[i] = 0;
+            }
         },
         getRewardTemporal:function(){
             var reward = 0;
@@ -46,28 +54,31 @@ var J = {};
             return reward;
         },
         getRewardSpatial:function(a1,a2,a3,cell){
-            var reward;
-            this.pushValue(a1,a2,a3);
             var cellHuman = this.env.cClick;
             var xCellH1 = this.env.stox(cellHuman);
             var yCellH1 = this.env.stoy(cellHuman);
 
-            var entWhite = this.computeEntropy(this.white, 729);
-            var entRed = this.computeEntropy(this.red, 729);
-            var entBlue = this.computeEntropy(this.blue, 729);
+            var entWhite = this.computeEntropy(this.white);
+            var entRed = this.computeEntropy(this.red);
+            var entBlue = this.computeEntropy(this.blue);
             var xCell1 = this.env.stox(cell);
             var yCell1 = this.env.stoy(cell);
             
             // Compute distance
             var d1 = Math.sqrt(Math.pow(xCellH1 - xCell1,2) + Math.pow(yCellH1 - yCell1,2));
-            reward = -d1;
+            var rewardDistance = -d1;
             
             if(xCell1 === this.xCell0 && yCell1 === this.yCell0){
-                reward-=0.5;
+                rewardDistance-=0.5;
             }
             this.xCell0 = xCell1;
             this.yCell0 = yCell1;        
             this.d0 = d1;
+            
+            // Color
+            this.updateHistogramColor();
+            
+            var reward = rewardDistance;
             
             //Global entropy TODO
             var entA1 = this.computeEntropy(this.a1, 8);
@@ -77,19 +88,39 @@ var J = {};
             
             return reward; 
         },
-        createHistogram:function(tab){
-            var a = [], b = [], prev;
-            tab.sort();
-            for ( var i = 0; i < tab.length; i++ ) {
-                if ( tab[i] !== prev ) {
-                    a.push(tab[i]);
-                    b.push(1);
-                } else {
-                    b[b.length-1]++;
+        updateHistogramColor:function(){
+            var max = 729;
+            var nbInterval = 4;
+            var borne = Math.floor(max/nbInterval)+1;
+            
+            for(var i = 0; i < nbInterval; i++){
+                if(this.env.white >= i*borne && this.env.white < (i+1)*borne){
+                    this.histWhite[i] = this.histWhite[i]+1;
                 }
-                prev = tab[i];
-            }
-            return b;
+                if(this.env.red >= i*borne && this.env.red < (i+1)*borne){
+                    this.histRed[i] = this.histRed[i]+1;
+                }
+                if(this.env.blue >= i*borne && this.env.blue < (i+1)*borne){
+                    this.histBlue[i] = this.histBlue[i]+1;
+                }
+            }  
+        },
+        updateFrequenceColor:function(){
+            var max = 729;
+            var nbInterval = 4;
+            var borne = Math.floor(max/nbInterval)+1;
+            
+            for(var i = 0; i < nbInterval; i++){
+                if(this.env.white >= i*borne && this.env.white < (i+1)*borne){
+                    this.histWhite[i] = this.histWhite[i]+1;
+                }
+                if(this.env.red >= i*borne && this.env.red < (i+1)*borne){
+                    this.histRed[i] = this.histRed[i]+1;
+                }
+                if(this.env.blue >= i*borne && this.env.blue < (i+1)*borne){
+                    this.histBlue[i] = this.histBlue[i]+1;
+                }
+            }  
         },
         computeEntropy:function(tab, n){
             var entropy = 0;
@@ -108,22 +139,6 @@ var J = {};
                 }
            }
            return entropy;
-        },
-        pushValue:function(a1,a2,a3){
-            if (this.white.length === this.TAB_MAX) {
-                this.white = this.white.slice(1);
-                this.red = this.red.slice(1);
-                this.blue = this.blue.slice(1);
-                this.a1 = this.a1.slice(1);
-                this.a2 = this.a2.slice(1);
-                this.a3 = this.a3.slice(1);
-            }
-            this.white.push(this.env.white);
-            this.red.push(this.env.red);
-            this.blue.push(this.env.blue);
-            this.a1.push(a1);
-            this.a2.push(a2);
-            this.a3.push(a3);
         }
     };
     global.Judge = Judge;
