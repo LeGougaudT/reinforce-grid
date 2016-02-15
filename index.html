@@ -102,6 +102,7 @@
                 // fill with random color
                 for (var i = 0; i < size; i++) {
                     for (var j = 0; j < size; j++) {
+                        //Color[i][j] = COLOR.WHITE;
                         Color[i][j] = Math.floor(Math.random() * (3)) ;
                         if(Color[i][j] === 0) this.white = this.white+1;
                         else if(Color[i][j] === 1) this.red = this.red+1;
@@ -516,7 +517,7 @@
                         actionAgentA = teAgentA.act(stateAgentA);
                         envTeAgentA.sampleNextState(actionAgentA);
                         
-                        rewardTemporal = judgeA.getRewardTemporal();
+                        judgeA.computeRewardTemporal();
                         
                         if(actionAgentA){
                             
@@ -540,26 +541,23 @@
                             
                             ccA = getCell(actionAgentA1,1) + getCell(actionAgentA2,2) + getCell(actionAgentA3,3);// ONLY FOR SIZE = 27
                             cellClicked(ccA);
-                            rewardSpatial = judgeA.getRewardSpatial(actionAgentA1, actionAgentA2, actionAgentA3, ccA);
+                            judgeA.computeRewardSpatial(actionAgentA1, actionAgentA2, actionAgentA3, ccA);
                             updatePuck(ccA, 1, 0);
                         }
                         
+                        reward = judgeA.getReward();
                         if(actionAgentA){
-                            reward = rewardTemporal + rewardSpatial;
                             spAgentA1.learn(reward);
                             spAgentA2.learn(reward);
                             spAgentA3.learn(reward);
                         }
-                        else{
-                             reward = rewardTemporal;
-                         }
                         teAgentA.learn(reward);
                         
                         stateAgentB = envTeAgentB.getState();
                         actionAgentB = teAgentB.act(stateAgentB);
                         envTeAgentB.sampleNextState(actionAgentB);
                         
-                        rewardTemporal = judgeB.getRewardTemporal();
+                        judgeB.computeRewardTemporal();
                         
                         if(actionAgentB){
                             
@@ -583,19 +581,16 @@
                             
                             ccB = getCell(actionAgentB1,1) + getCell(actionAgentB2,2) + getCell(actionAgentB3,3);// ONLY FOR SIZE = 27
                             cellClicked(ccB);
-                            rewardSpatial = judgeB.getRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
+                            judgeB.computeRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
                             updatePuck(ccB, 2, 0);
                         }
                         
+                        reward = judgeB.getReward();
                         if(actionAgentB){
-                            reward = rewardTemporal + rewardSpatial;
                             spAgentB1.learn(reward);
                             spAgentB2.learn(reward);
                             spAgentB3.learn(reward);
                         }
-                        else{
-                             reward = rewardTemporal;
-                         }
                         teAgentB.learn(reward);
                          
                         if (smooth_reward == null) {
@@ -678,6 +673,7 @@
                 value: spAgentA1.epsilon,
                 step: 0.01,
                 slide: function(event, ui) {
+                    teAgentA.epsilon = ui.value;
                     spAgentA1.epsilon = ui.value;
                     spAgentA2.epsilon = ui.value;
                     spAgentA3.epsilon = ui.value;

@@ -2,7 +2,7 @@
 var TemporalAgent = function() {
     cptAgent = 1;// to avoid NaN value (div by 0)
     actionTab = [];
-    sizeEnt = 3;
+    sizeEnt = 300;
     this.reset();
 };
 TemporalAgent.prototype = {
