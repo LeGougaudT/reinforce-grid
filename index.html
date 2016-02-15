@@ -77,6 +77,15 @@
         body {
             font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
         }
+        .left {
+            float: left;
+            width: 50%;
+        }
+
+        .right {
+            float: right;
+            width: 50%;
+        }
     </style>
     <script type="application/javascript">
         
@@ -503,9 +512,12 @@
         var actionAgentA, actionAgentA1, actionAgentA2, actionAgentA3, stateAgentA, stateAgentA1, stateAgentA2, stateAgentA3;
         var actionAgentB, actionAgentB1, actionAgentB2, actionAgentB3, stateAgentB, stateAgentB1, stateAgentB2, stateAgentB3;
         var ccA, ccB; // cell clicked
-        var smooth_reward_history = [];
-        var smooth_reward = null;
-        var flott = 0;
+        var smooth_reward_historyA = [];
+        var smooth_rewardA = null;
+        var smooth_reward_historyB = [];
+        var smooth_rewardB = null;
+        var flottA = 0;
+        var flottB = 0;
 
         function togglelearn() {
             if (sid === -1) {
@@ -553,6 +565,23 @@
                         }
                         teAgentA.learn(reward);
                         
+                        //Graph for AgentA
+                        if (smooth_rewardA == null) {
+                            smooth_rewardA = reward;
+                        }
+                        smooth_rewardA = smooth_rewardA * 0.999 + reward * 0.001;
+
+                        // Push value for graph
+                        flottA += 1;
+                        if (flottA === 200) {
+                            // record smooth reward
+                            if (smooth_reward_historyA.length >= nflot) {
+                                smooth_reward_historyA = smooth_reward_historyA.slice(1);
+                            }
+                            smooth_reward_historyA.push(smooth_rewardA);
+                            flottA = 0;
+                        }
+                        
                         stateAgentB = envTeAgentB.getState();
                         actionAgentB = teAgentB.act(stateAgentB);
                         envTeAgentB.sampleNextState(actionAgentB);
@@ -593,32 +622,22 @@
                         }
                         teAgentB.learn(reward);
                          
-                        if (smooth_reward == null) {
-                            smooth_reward = reward;
+                        if (smooth_rewardB == null) {
+                            smooth_rewardB = reward;
                         }
-                        smooth_reward = smooth_reward * 0.999 + reward * 0.001;
+                        smooth_rewardB = smooth_rewardB * 0.999 + reward * 0.001;
 
                         // Push value for graph
-                        flott += 1;
-                        if (flott === 200) {
+                        flottB += 1;
+                        if (flottB === 200) {
                             // record smooth reward
-                            if (smooth_reward_history.length >= nflot) {
-                                smooth_reward_history = smooth_reward_history.slice(1);
+                            if (smooth_reward_historyB.length >= nflot) {
+                                smooth_reward_historyB = smooth_reward_historyB.slice(1);
                             }
-                            smooth_reward_history.push(smooth_reward);
-                            flott = 0;
+                            smooth_reward_historyB.push(smooth_rewardB);
+                            flottB = 0;
                         }
                     }
-                    
-
-                    if (typeof teAgentA.expi !== 'undefined') {
-                        $("#expi").html(spAgentA1.expi);
-                    }
-                    if (typeof teAgentA.tderror !== 'undefined') {
-                        $("#tde").html(spAgentA1.tderror.toFixed(3));
-                    }
-                    // $("#tdest").html('tderror: ' + spAgent1.tderror_estimator.getMean().toFixed(4) + ' +/- ' + spAgent1.tderror_estimator.getStd().toFixed(4));
-
                 }, 20);
             } else {
                 clearInterval(sid);
@@ -666,8 +685,8 @@
             initDraw();
             initFlot();
 
-            // slider sets envSpAgentA1 epsilon
-            $("#slider").slider({
+            // sliderA sets envSpAgentA1 epsilon
+            $("#sliderA").slider({
                 min: 0,
                 max: 1,
                 value: spAgentA1.epsilon,
@@ -677,12 +696,24 @@
                     spAgentA1.epsilon = ui.value;
                     spAgentA2.epsilon = ui.value;
                     spAgentA3.epsilon = ui.value;
-                    $("#eps").html(ui.value.toFixed(2));
+                    $("#epsA").html(ui.value.toFixed(2));
                 }
             });
-            $("#eps").html(spAgentA1.epsilon.toFixed(2));
-
-            // togglelearn(); // start
+            $("#sliderB").slider({
+                min: 0,
+                max: 1,
+                value: spAgentB1.epsilon,
+                step: 0.01,
+                slide: function(event, ui) {
+                    teAgentB.epsilon = ui.value;
+                    spAgentB1.epsilon = ui.value;
+                    spAgentB2.epsilon = ui.value;
+                    spAgentB3.epsilon = ui.value;
+                    $("#epsB").html(ui.value.toFixed(2));
+                }
+            });
+            $("#epsA").html(spAgentA1.epsilon.toFixed(2));
+            $("#epsB").html(spAgentB1.epsilon.toFixed(2));
 
             // render markdown
             $(".md").each(function() {
@@ -709,7 +740,8 @@
                 spAgentA1.fromJSON(data); // corss your fingers...
                 // set epsilon to be much lower for more optimal behavior
                 spAgentA1.epsilon = 0.05;
-                $("#slider").slider('value', spAgentA1.epsilon);
+                $("#sliderA").sliderA('value', spAgentA1.epsilon);
+                $("#sliderB").sliderB('value', spAgentB1.epsilon);
                 $("#eps").html(spAgentA1.epsilon.toFixed(2));
                 // kill learning rate to not learn
                 spAgentA1.alpha = 0;
@@ -722,17 +754,48 @@
         // }
 
         // For plot stuff
-        var nflot = 200;
+        var nflot = 100;
         function initFlot() {
-            var container = $("#flotreward");
-            var res = getFlotRewards();
-            series = [{
+            var containerA = $("#flotrewardA");
+            var containerB = $("#flotrewardB");
+            var res = getFlotRewardsA();
+            seriesA = [{
                 data: res,
                 lines: {
                     fill: true
                 }
             }];
-            var plot = $.plot(container, series, {
+            var res = getFlotRewardsB();
+            seriesB = [{
+                data: res,
+                lines: {
+                    fill: true
+                }
+            }];
+            var plotA = $.plot(containerA, seriesA, {
+                grid: {
+                    borderWidth: 1,
+                    minBorderMargin: 20,
+                    labelMargin: 10,
+                    backgroundColor: {
+                        colors: ["#ffffff", "#e4f4f4"]
+                    },
+                    margin: {
+                        top: 10,
+                        bottom: 10,
+                        left: 10,
+                    }
+                },
+                xaxis: {
+                    min: 0,
+                    max: nflot
+                },
+                yaxis: {
+                    min: -2,
+                    max: 1
+                }
+            });
+            var plotB = $.plot(containerB, seriesB, {
                 grid: {
                     borderWidth: 1,
                     minBorderMargin: 20,
@@ -756,16 +819,31 @@
                 }
             });
             setInterval(function() {
-                series[0].data = getFlotRewards();
-                plot.setData(series);
-                plot.draw();
+                seriesA[0].data = getFlotRewardsA();
+                plotA.setData(seriesA);
+                plotA.draw();
+            }, 100);
+            setInterval(function() {
+                seriesB[0].data = getFlotRewardsB();
+                plotB.setData(seriesB);
+                plotB.draw();
             }, 100);
         }
-        function getFlotRewards() {
+        
+        function getFlotRewardsA() {
             // zip rewards into flot data
             var res = [];
-            for (var i = 0, n = smooth_reward_history.length; i < n; i++) {
-                res.push([i, smooth_reward_history[i]]);
+            for (var i = 0, n = smooth_reward_historyA.length; i < n; i++) {
+                res.push([i, smooth_reward_historyA[i]]);
+            }
+            return res;
+        }
+        
+        function getFlotRewardsB() {
+            // zip rewards into flot data
+            var res = [];
+            for (var i = 0, n = smooth_reward_historyB.length; i < n; i++) {
+                res.push([i, smooth_reward_historyB[i]]);
             }
             return res;
         }
@@ -819,8 +897,11 @@ spec.num_hidden_units = 100 // number of neurons in hidden layer
         <button class="btn btn-success" onclick="gofast()" style="width:150px;height:50px;margin-bottom:5px;">Go fast</button>
         <button class="btn btn-success" onclick="gonormal()" style="width:150px;height:50px;margin-bottom:5px;">Go normal</button>
         <button class="btn btn-success" onclick="goslow()" style="width:150px;height:50px;margin-bottom:5px;">Go slow</button>
-        <br> Exploration epsilon: <span id="eps">0.15</span>
-        <div id="slider"></div>
+        
+        <br> Exploration epsilon Agent A: <span id="epsA">0.15</span>
+        <div id="sliderA"></div>
+        <br> Exploration epsilon Agent B: <span id="epsB">0.15</span>
+        <div id="sliderB"></div>
         <br>
         <div id="draw"></div>
         <br>
@@ -828,18 +909,18 @@ spec.num_hidden_units = 100 // number of neurons in hidden layer
             <button class="btn btn-primary" onclick="loadAgent()" style="width:200px;height:35px;margin-bottom:5px;margin-right:20px;">Load a Pretrained Agent</button>
         </div>
         <textarea id="mysterybox" style="width:100%;display:none;">mystery text box</textarea>
+        <br>
+        <br>
+        <br>
         <div>
-            Experience write pointer:
-            <div id="expi" style="display:inline-block;"></div>
-        </div>
-        <div>
-            Latest TD error:
-            <div id="tde" style="display:inline-block;"></div>
-        </div>
-        <div id="tdest"></div>
-        <div>
-            <div style="text-align:center">Average reward graph (high is good)</div>
-            <div id="flotreward" style="width:800px; height: 400px;"></div>
+            <div class="left">
+                <div style="text-align:center">Average reward graph Agent A (high is good)</div>
+                <div id="flotrewardA" style="width:400px; height: 400px;"></div>
+            </div>
+            <div class="right">
+                <div style="text-align:center">Average reward graph Agent B (high is good)</div>
+                <div id="flotrewardB" style="width:400px; height: 400px;"></div>
+            </div>
         </div>
     </div>
 </body>
