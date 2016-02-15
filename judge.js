@@ -24,7 +24,8 @@ var J = {};
         this.freqHumanAgentG = 0;
         
         //Final reward
-        this.reward = 0;
+        this.rewardT = 0;
+        this.rewardS = 0;
         
         this.reset();
     };
@@ -36,10 +37,16 @@ var J = {};
             this.a3 = [];
         },
         getReward:function(){
-            return this.reward;
+            return this.rewardT+this.rewardS;
+        },
+        getRewardSpatial:function(){
+            return this.rewardS;
+        },
+        setRewardSpatial:function(reward){
+            return this.rewardS = reward;
         },
         computeRewardTemporal:function(){
-            this.reward = 0;
+            this.rewardT = 0;
             var state = this.envTeAgent.getState();
             
             // decision of play / total decision
@@ -56,8 +63,8 @@ var J = {};
             var entAction = this.computeEntropy(freqAction);
             var entHumanAgent = this.computeEntropy(freqHumanAgent);
             
-            this.reward = -Math.abs(entAction - this.freqActionG);
-            this.reward += -Math.abs(entHumanAgent - this.freqHumanAgentG);
+            this.rewardT = -Math.abs(entAction - this.freqActionG);
+            this.rewardT += -Math.abs(entHumanAgent - this.freqHumanAgentG);
         },
         computeRewardSpatial:function(a1,a2,a3,cell){
             var cellHuman = this.env.cClick;
@@ -88,7 +95,7 @@ var J = {};
 //          var entA1 = this.computeEntropy(this.a1, 8);
 //          var entA2 = this.computeEntropy(this.a2, 8);
 //          var entA3 = this.computeEntropy(this.a3, 8);
-            this.reward += -Math.abs(entHistColor - this.colorG);
+            this.rewardS = -Math.abs(entHistColor - this.colorG);
         },
         updateHistogramColor:function(){
             var tab = [];

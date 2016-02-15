@@ -40,7 +40,8 @@
           RED: 1,
           BLUE: 2
       };
-      // Num of color in COLOR 
+      // Num of color in COLOR
+      var nbAgent = 1;
       var NBCOLOR = 3;
       var env;
       var size = 27;// global size of the grid
@@ -518,6 +519,7 @@
         var smooth_rewardB = null;
         var flottA = 0;
         var flottB = 0;
+        var prevRewardSpatial = 0;
 
         function togglelearn() {
             if (sid === -1) {
@@ -555,8 +557,11 @@
                             cellClicked(ccA);
                             judgeA.computeRewardSpatial(actionAgentA1, actionAgentA2, actionAgentA3, ccA);
                             updatePuck(ccA, 1, 0);
+                            prevRewardSpatial = judgeA.getRewardSpatial();
                         }
-                        
+                        else{
+                            judgeA.setRewardSpatial(prevRewardSpatial);
+                        }
                         reward = judgeA.getReward();
                         if(actionAgentA){
                             spAgentA1.learn(reward);
@@ -612,8 +617,11 @@
                             cellClicked(ccB);
                             judgeB.computeRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
                             updatePuck(ccB, 2, 0);
+                            prevRewardSpatial = judgeB.getRewardSpatial();
                         }
-                        
+                        else{
+                            judgeA.setRewardSpatial(prevRewardSpatial);
+                        }
                         reward = judgeB.getReward();
                         if(actionAgentB){
                             spAgentB1.learn(reward);
@@ -758,16 +766,16 @@
         function initFlot() {
             var containerA = $("#flotrewardA");
             var containerB = $("#flotrewardB");
-            var res = getFlotRewardsA();
+            var resA = getFlotRewardsA();
             seriesA = [{
-                data: res,
+                data: resA,
                 lines: {
                     fill: true
                 }
             }];
-            var res = getFlotRewardsB();
+            var resB = getFlotRewardsB();
             seriesB = [{
-                data: res,
+                data: resB,
                 lines: {
                     fill: true
                 }
@@ -823,6 +831,7 @@
                 plotA.setData(seriesA);
                 plotA.draw();
             }, 100);
+            
             setInterval(function() {
                 seriesB[0].data = getFlotRewardsB();
                 plotB.setData(seriesB);
