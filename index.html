@@ -67,6 +67,50 @@
   
   
     <style>
+        .onoffswitch {
+            position: relative; width: 95px;
+            -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+        }
+        .onoffswitch-checkbox {
+            display: none;
+        }
+        .onoffswitch-label {
+            display: block; overflow: hidden; cursor: pointer;
+            border: 0.5px solid #2e6da4; border-radius: 6px;
+        }
+        .onoffswitch-inner {
+            display: block; width: 200%; margin-left: -100%;
+            transition: margin 0.3s ease-in 0s;
+        }
+        .onoffswitch-inner:before, .onoffswitch-inner:after {
+            display: block; float: left; width: 50%; height: 30px; padding: 0; line-height: 30px;
+            font-size: 14px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+        }
+        .onoffswitch-inner:before {
+            content: "Human";
+            padding-left: 10px;
+            background-color: #337AB7; color: #FFFFFF;
+        }
+        .onoffswitch-inner:after {
+            content: "IA";
+            padding-right: 10px;
+            background-color: #FF0000; color: #FFFFFF;
+            text-align: right;
+        }
+        .onoffswitch-switch {
+            display: block; width: 18px; margin: 6px;
+            background: #FFFFFF;
+            position: absolute; top: 0; bottom: 0;
+            right: 61px;
+            border: 2px solid #999999; border-radius: 5px;
+            transition: all 0.3s ease-in 0s; 
+        }
+        .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+            margin-left: 0;
+        }
+        .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+            right: 0px; 
+        }
         #wrap {
             width: 800px;
             margin-left: auto;
@@ -99,7 +143,7 @@
         }
         ColorGrid.prototype = {
             reset: function() {
-                this.white = 0;
+                this.white = 729;
                 this.red = 0;
                 this.blue = 0;
                 
@@ -112,11 +156,11 @@
                 // fill with random color
                 for (var i = 0; i < size; i++) {
                     for (var j = 0; j < size; j++) {
-                        //Color[i][j] = COLOR.WHITE;
-                        Color[i][j] = Math.floor(Math.random() * (3)) ;
-                        if(Color[i][j] === 0) this.white = this.white+1;
-                        else if(Color[i][j] === 1) this.red = this.red+1;
-                        else if(Color[i][j] === 2) this.blue = this.blue+1;
+                        Color[i][j] = COLOR.WHITE;
+                        //Color[i][j] = Math.floor(Math.random() * (3)) ;
+                        //if(Color[i][j] === 0) this.white = this.white+1;
+                        //else if(Color[i][j] === 1) this.red = this.red+1;
+                        //else if(Color[i][j] === 2) this.blue = this.blue+1;
                     }    
                 }
                 this.Color = Color;
@@ -200,6 +244,7 @@
                 .attr('r', 10)
                 .attr('fill', '#AEF')
                 .attr('stroke', '#000')
+                .attr('visibility', 'hidden')
                 .attr('id', 'puckB');
         }
         
@@ -531,6 +576,13 @@
                         actionAgentA = teAgentA.act(stateAgentA);
                         envTeAgentA.sampleNextState(actionAgentA);
                         
+                        if(nbAgent === 2){
+                            envTeAgentA.freqJ1J2 = envTeAgentA.cptAgent / envTeAgentB.cptAgent;
+                        }
+                        else{
+                            envTeAgentA.freqJ1J2 = cptHuman / envTeAgentA.cptAgent;
+                        }
+                        
                         judgeA.computeRewardTemporal();
                         
                         if(actionAgentA){
@@ -587,63 +639,66 @@
                             flottA = 0;
                         }
                         
-                        stateAgentB = envTeAgentB.getState();
-                        actionAgentB = teAgentB.act(stateAgentB);
-                        envTeAgentB.sampleNextState(actionAgentB);
-                        
-                        judgeB.computeRewardTemporal();
-                        
-                        if(actionAgentB){
+                        if(nbAgent === 2){
+                            stateAgentB = envTeAgentB.getState();
+                            actionAgentB = teAgentB.act(stateAgentB);
+                            envTeAgentB.sampleNextState(actionAgentB);
                             
-                            // Agent 1
-                            updateAgent1Data(envSpAgentB1);
-                            stateAgentB1 = envSpAgentB1.getState();
-                            actionAgentB1 = spAgentB1.act(stateAgentB1);
-                            envSpAgentB1.area = actionAgentB1;
-                            
-                            // Agent 2
-                            updateAgent2Data(envSpAgentB2, actionAgentB1);
-                            stateAgentB2 = envSpAgentB2.getState();
-                            actionAgentB2 = spAgentB2.act(stateAgentB2);
-                            envSpAgentB2.area = actionAgentB2;
-                            
-                            // Agent 3            
-                            updateAgent3Data(envSpAgentB3, actionAgentB1, actionAgentB2);
-                            stateAgentB3 = envSpAgentB3.getState();
-                            actionAgentB3 = spAgentB3.act(stateAgentB3);
-                            envSpAgentB3.area = actionAgentB3;
-                            
-                            ccB = getCell(actionAgentB1,1) + getCell(actionAgentB2,2) + getCell(actionAgentB3,3);// ONLY FOR SIZE = 27
-                            cellClicked(ccB);
-                            judgeB.computeRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
-                            updatePuck(ccB, 2, 0);
-                            prevRewardSpatial = judgeB.getRewardSpatial();
-                        }
-                        else{
-                            judgeA.setRewardSpatial(prevRewardSpatial);
-                        }
-                        reward = judgeB.getReward();
-                        if(actionAgentB){
-                            spAgentB1.learn(reward);
-                            spAgentB2.learn(reward);
-                            spAgentB3.learn(reward);
-                        }
-                        teAgentB.learn(reward);
-                         
-                        if (smooth_rewardB == null) {
-                            smooth_rewardB = reward;
-                        }
-                        smooth_rewardB = smooth_rewardB * 0.999 + reward * 0.001;
+                            envTeAgentB.freqJ1J2 = envTeAgentB.cptAgent / envTeAgentA.cptAgent;
+                            judgeB.computeRewardTemporal();
 
-                        // Push value for graph
-                        flottB += 1;
-                        if (flottB === 200) {
-                            // record smooth reward
-                            if (smooth_reward_historyB.length >= nflot) {
-                                smooth_reward_historyB = smooth_reward_historyB.slice(1);
+                            if(actionAgentB){
+
+                                // Agent 1
+                                updateAgent1Data(envSpAgentB1);
+                                stateAgentB1 = envSpAgentB1.getState();
+                                actionAgentB1 = spAgentB1.act(stateAgentB1);
+                                envSpAgentB1.area = actionAgentB1;
+
+                                // Agent 2
+                                updateAgent2Data(envSpAgentB2, actionAgentB1);
+                                stateAgentB2 = envSpAgentB2.getState();
+                                actionAgentB2 = spAgentB2.act(stateAgentB2);
+                                envSpAgentB2.area = actionAgentB2;
+
+                                // Agent 3            
+                                updateAgent3Data(envSpAgentB3, actionAgentB1, actionAgentB2);
+                                stateAgentB3 = envSpAgentB3.getState();
+                                actionAgentB3 = spAgentB3.act(stateAgentB3);
+                                envSpAgentB3.area = actionAgentB3;
+
+                                ccB = getCell(actionAgentB1,1) + getCell(actionAgentB2,2) + getCell(actionAgentB3,3);// ONLY FOR SIZE = 27
+                                cellClicked(ccB);
+                                judgeB.computeRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
+                                updatePuck(ccB, 2, 0);
+                                prevRewardSpatial = judgeB.getRewardSpatial();
                             }
-                            smooth_reward_historyB.push(smooth_rewardB);
-                            flottB = 0;
+                            else{
+                                judgeA.setRewardSpatial(prevRewardSpatial);
+                            }
+                            reward = judgeB.getReward();
+                            if(actionAgentB){
+                                spAgentB1.learn(reward);
+                                spAgentB2.learn(reward);
+                                spAgentB3.learn(reward);
+                            }
+                            teAgentB.learn(reward);
+
+                            if (smooth_rewardB == null) {
+                                smooth_rewardB = reward;
+                            }
+                            smooth_rewardB = smooth_rewardB * 0.999 + reward * 0.001;
+
+                            // Push value for graph
+                            flottB += 1;
+                            if (flottB === 200) {
+                                // record smooth reward
+                                if (smooth_reward_historyB.length >= nflot) {
+                                    smooth_reward_historyB = smooth_reward_historyB.slice(1);
+                                }
+                                smooth_reward_historyB.push(smooth_rewardB);
+                                flottB = 0;
+                            }
                         }
                     }
                 }, 20);
@@ -830,12 +885,11 @@
                 seriesA[0].data = getFlotRewardsA();
                 plotA.setData(seriesA);
                 plotA.draw();
-            }, 100);
-            
-            setInterval(function() {
-                seriesB[0].data = getFlotRewardsB();
-                plotB.setData(seriesB);
-                plotB.draw();
+                if(this.nbAgent == 2){
+                    seriesB[0].data = getFlotRewardsB();
+                    plotB.setData(seriesB);
+                    plotB.draw();
+                }
             }, 100);
         }
         
@@ -867,6 +921,21 @@
 
         function goslow() {
             steps_per_tick = 0.2;
+        }
+        
+        function checkNbAgent(){
+            envTeAgentA.cptAgent = 1;
+            envTeAgentB.cptAgent = 1;
+            cptHuman = 1;
+            if(nbAgent === 1){
+                nbAgent = 2;
+                document.getElementById("puckB").style.visibility = "visible";
+                document.getElementById("slideB").style.visibility = "visible";
+            }else{
+                nbAgent = 1;
+                document.getElementById("puckB").style.visibility = "hidden";
+                document.getElementById("slideB").style.visibility = "hidden";
+            }
         }
 
         var jaxrendered = false;
@@ -909,13 +978,24 @@ spec.num_hidden_units = 100 // number of neurons in hidden layer
         
         <br> Exploration epsilon Agent A: <span id="epsA">0.15</span>
         <div id="sliderA"></div>
-        <br> Exploration epsilon Agent B: <span id="epsB">0.15</span>
-        <div id="sliderB"></div>
+        <div id="slideB" style="visibility:hidden">
+            <br> Exploration epsilon Agent B: <span id="epsB">0.15</span>
+            <div id="sliderB"></div>
+        </div>
         <br>
         <div id="draw"></div>
         <br>
-        <div style="float:right;">
-            <button class="btn btn-primary" onclick="loadAgent()" style="width:200px;height:35px;margin-bottom:5px;margin-right:20px;">Load a Pretrained Agent</button>
+        <div style="width:100%; overflow:hidden">
+            <div style="float:left" class="onoffswitch">
+            <input onclick="checkNbAgent()" type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch" checked>
+            <label class="onoffswitch-label" for="myonoffswitch">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+            </div>
+            <div style="margin-left:70%;">
+                <button class="btn btn-primary" onclick="loadAgent()" style="width:200px;height:35px;margin-bottom:5px;margin-right:20px;">Load a Pretrained Agent</button>
+            </div>
         </div>
         <textarea id="mysterybox" style="width:100%;display:none;">mystery text box</textarea>
         <br>

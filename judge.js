@@ -21,7 +21,7 @@ var J = {};
         //Goal
         this.colorG = 0;
         this.freqActionG = 0;
-        this.freqHumanAgentG = 0;
+        this.freqJ1J2G = 0;
         
         //Final reward
         this.rewardT = 0;
@@ -55,16 +55,16 @@ var J = {};
             freqAction.push(1-state[0]);
             
             // human play / decision of play agent
-            var freqHumanAgent = [];
-            freqHumanAgent.push(state[1]);
-            freqHumanAgent.push(1-state[1]);
+            var freqJ1J2 = [];
+            freqJ1J2.push(state[1]);
+            freqJ1J2.push(1-state[1]);
             
             //reward - pour freqAction
             var entAction = this.computeEntropy(freqAction);
-            var entHumanAgent = this.computeEntropy(freqHumanAgent);
+            var entHumanAgent = this.computeEntropy(freqJ1J2);
             
             this.rewardT = -Math.abs(entAction - this.freqActionG);
-            this.rewardT += -Math.abs(entHumanAgent - this.freqHumanAgentG);
+            this.rewardT += -Math.abs(entHumanAgent - this.freqJ1J2G);
         },
         computeRewardSpatial:function(a1,a2,a3,cell){
             var cellHuman = this.env.cClick;

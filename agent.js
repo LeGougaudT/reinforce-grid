@@ -1,6 +1,6 @@
 // Temporal agent that allows plays or no
 var TemporalAgent = function() {
-    cptAgent = 1;// to avoid NaN value (div by 0)
+    this.cptAgent = 1;// to avoid NaN value (div by 0)
     actionTab = [];
     sizeEnt = 300;
     this.reset();
@@ -8,7 +8,7 @@ var TemporalAgent = function() {
 TemporalAgent.prototype = {
     reset: function(){
         this.freqAction = 0;
-        this.freqHumanAgent = 0;
+        this.freqJ1J2 = 0;
     },
     getNumStates: function() {
         return 2; // Different value of game timer
@@ -17,26 +17,25 @@ TemporalAgent.prototype = {
         return 2; // True/False
     },
     getState: function() {
-        var s = [this.freqAction, this.freqHumanAgent];
+        var s = [this.freqAction, this.freqJ1J2];
         return s;
     },
     sampleNextState: function(a) {
-        if(cptAgent > 2*Math.pow(10,9)){
-            cptAgent = Math.round(cptAgent / 2);
+        if(this.cptAgent > 2*Math.pow(10,9)){
+            this.cptAgent = Math.round(this.cptAgent / 2);
             cptHuman = Math.round(cptHuman / 2);
         }
         if(actionTab.length >= sizeEnt){
             actionTab = actionTab.slice(1);
         }
         if(a){
-            cptAgent = cptAgent + 1;
+            this.cptAgent = this.cptAgent + 1;
             actionTab.push(1);
         }
         else{
             actionTab.push(0);
         }
         this.freqAction = actionTab.reduce((prev,current) => prev + current) / actionTab.length;
-        this.freqHumanAgent = cptHuman/cptAgent;
     }
 };
 
