@@ -15,23 +15,23 @@ var J = {};
         
         //Entropy
         this.entHistColor;
-        this.entAction;
-        this.entHumanAgent;
-        this.entActionHistory = [];
-        this.entHumanAgentHistory = [];
+        this.freqActionHistory = [];
+        this.freqJ1J2History= [];
         
         //Goal
         this.colorG = 0;
         
         this.valuesAction = new Object();
         this.valuesAction.min = 0;
-        this.valuesAction.max = 0;
-        this.valuesAction.target = this.valuesAction.min;
+        this.valuesAction.max = 1;
+        this.valuesAction.cpt = 0;
+        this.valuesAction.target = Math.random();
         
         this.valuesJ1J2 = new Object();        
         this.valuesJ1J2.min = 0;
-        this.valuesJ1J2.max = 0;
-        this.valuesJ1J2.target =  this.valuesJ1J2.min;
+        this.valuesJ1J2.max = 1;
+        this.valuesJ1J2.cpt = 0;
+        this.valuesJ1J2.target =  Math.random();
         
         //Final reward
         this.rewardT = 0;
@@ -59,48 +59,49 @@ var J = {};
             this.rewardT = 0;
             var state = this.envTeAgent.getState();
             
-            // decision of play / total decision
-            var freqAction = [];
-            freqAction.push(state[0]);
-            freqAction.push(1-state[0]);
+            // save entropy values in history
+            if(this.freqActionHistory.length >= 1000){
+                this.freqActionHistory = this.freqActionHistory.slice(1);
+                this.freqJ1J2History = this.freqJ1J2History.slice(1);
+            }
             
-            // human play / decision of play agent
-            var freqJ1J2 = [];
-            freqJ1J2.push(state[1]);
-            freqJ1J2.push(1-state[1]);
+            // decision of play / total decision
+            this.freqActionHistory.push(state[0]);
+            this.freqJ1J2History.push(state[1]);
             
             //reward - pour freqAction
-            var entAction = this.computeEntropy(freqAction);
-            var entHumanAgent = this.computeEntropy(freqJ1J2);
+//            var entAction = this.computeEntropy(freqAction);
+//            var entHumanAgent = this.computeEntropy(freqJ1J2);
             
             // save entropy values in history
-            if(this.entActionHistory.length >= 1000){
-                this.entActionHistory = this.entActionHistory.slice(1);
-                this.entHumanAgentHistory = this.entHumanAgentHistory.slice(1);
-            }
-            this.entActionHistory.push(entAction);
-            this.entHumanAgentHistory.push(entHumanAgent);
+//            if(this.entActionHistory.length >= 1000){
+//                this.entActionHistory = this.entActionHistory.slice(1);
+//                this.entHumanAgentHistory = this.entHumanAgentHistory.slice(1);
+//            }
+//            this.entActionHistory.push(entAction);
+//            this.entHumanAgentHistory.push(entHumanAgent);
             
-            // update max and min entropy values if needed
-            if(entAction < this.valuesAction.min){
-                this.valuesAction.min = entAction;
-            }
-            if(entAction > this.valuesAction.max){
-                this.valuesAction.max = entAction;
-            }
-            
-            if(entHumanAgent < this.valuesJ1J2.min){
-                this.valuesJ1J2.min = entHumanAgent;
-            }
-            if(entHumanAgent > this.valuesJ1J2.max){
-                this.valuesJ1J2.max = entHumanAgent;
-            }
+//            // update max and min entropy values if needed
+//            if(entAction < this.valuesAction.min){
+//                this.valuesAction.min = entAction;
+//            }
+//            if(entAction > this.valuesAction.max){
+//                this.valuesAction.max = entAction;
+//            }
+//            
+//            if(entHumanAgent < this.valuesJ1J2.min){
+//                this.valuesJ1J2.min = entHumanAgent;
+//            }
+//            if(entHumanAgent > this.valuesJ1J2.max){
+//                this.valuesJ1J2.max = entHumanAgent;
+//            }
             
             // check the stability on the entropy history
-            this.checkStability(this.entActionHistory,this.valuesAction);
+            this.checkStability(this.freqActionHistory,this.valuesAction);
+            this.checkStability(this.freqJ1J2History,this.valuesJ1J2);
             
-            this.rewardT = -Math.abs(entAction - this.valuesAction.target);
-            this.rewardT += -Math.abs(entHumanAgent - this.valuesAction.target);
+            this.rewardT = -Math.abs(state[0] - this.valuesAction.target);
+            this.rewardT += -Math.abs(state[1] - this.valuesJ1J2.target);
         },
         computeRewardSpatial:function(a1,a2,a3,cell){
             var cellHuman = this.env.cClick;
@@ -153,19 +154,33 @@ var J = {};
             }
             return entropy;
         },
-        checkStability:function(entropyHist,obj){
-            if(entropyHist.length >= 1000){
+        checkStability:function(history,obj){
+            obj.cpt = obj.cpt + 1;
+            if(history.length >= 1000){
                 var sum = 0;
-                for(var i = 0;i < entropyHist.length;i++){
-                    sum += entropyHist[i];
+                for(var i = 0;i < history.length;i++){
+                    sum += history[i];
                 }
-                var meanEntropy = sum/(entropyHist.length);
-
-                if((Math.abs(meanEntropy - obj.min)) < 0.1){
-                    obj.target = obj.max;
+                var mean = sum/(history.length);
+                
+                var distanceRelative = 0;
+                for(var i = 0;i < history.length;i++){
+                    distanceRelative += Math.pow((history[i]-mean), 2);
                 }
-                else if(Math.abs(meanEntropy - obj.max) < 0.1){
-                    obj.target = obj.min;
+                
+                distanceRelative = distanceRelative/history.length;
+                
+                distanceRelative = Math.sqrt(distanceRelative);
+                
+                var sumLast = 0;
+                for(var i = 1; i <=10; i++){
+                    sumLast += history[history.length-i];
+                }
+                var meanLast = sumLast/10;
+                
+                if(((distanceRelative < 0.02) && (Math.abs(meanLast-obj.target)) < 0.1) || (obj.cpt > 4000)){
+                    obj.target = Math.random();
+                    obj.cpt = 0;
                 }
             }    
         }
