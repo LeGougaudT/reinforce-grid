@@ -33,6 +33,12 @@ var J = {};
         this.valuesJ1J2.cpt = 0;
         this.valuesJ1J2.target =  Math.random();
         
+        this.spatialValues = new Object();        
+        this.spatialValues.min = 0;
+        this.spatialValues.max = 1;
+        this.spatialValues.cpt = 0;
+        this.spatialValues.target =  Math.random();
+        
         //Final reward
         this.rewardT = 0;
         this.rewardS = 0;
@@ -47,7 +53,8 @@ var J = {};
             this.a3 = [];
         },
         getReward:function(){
-            return this.rewardT+this.rewardS;
+            //return this.rewardT+this.rewardS;
+            return this.rewardS;
         },
         getRewardSpatial:function(){
             return this.rewardS;
@@ -103,40 +110,15 @@ var J = {};
             this.rewardT = -Math.abs(state[0] - this.valuesAction.target);
             this.rewardT += -Math.abs(state[1] - this.valuesJ1J2.target);
         },
-        computeRewardSpatial:function(a1,a2,a3,cell){
-            var cellHuman = this.env.cClick;
+        computeRewardSpatial:function(){
             
-            var xCellH1 = this.env.stox(cellHuman);
-            var yCellH1 = this.env.stoy(cellHuman);
-            var xCell1 = this.env.stox(cell);
-            var yCell1 = this.env.stoy(cell);
-            
-            // Compute distance
-            var d1 = Math.sqrt(Math.pow(xCellH1 - xCell1,2) + Math.pow(yCellH1 - yCell1,2));
-            var rewardDistance = -d1;
-            
-            if(xCell1 === this.xCell0 && yCell1 === this.yCell0){
-                rewardDistance-=0.5;
-            }
-            this.xCell0 = xCell1;
-            this.yCell0 = yCell1;
-            this.d0 = d1;
-            
-            //var reward = rewardDistance;
-            
-             // Color
+            // Color
             var histColor = this.updateHistogramColor();
-            var entHistColor = this.computeEntropy(histColor);
-            
-//          Global entropy TODO
-//          var entA1 = this.computeEntropy(this.a1, 8);
-//          var entA2 = this.computeEntropy(this.a2, 8);
-//          var entA3 = this.computeEntropy(this.a3, 8);
-            //this.rewardS = -Math.abs(entHistColor - this.colorG);
-            this.rewardS = 0;
-            
-            ///////////////////////////////////////////////////////////////////////
-            
+                        
+            // Global entropy TODO
+            var spatialEntropy = this.computeEntropy(histColor);
+//            this.rewardS = -Math.abs(spatialEntropy - this.spatialValues.target);
+            this.rewardS = -Math.abs(spatialEntropy - 0);
         },
         updateHistogramColor:function(){
             var tab = [];

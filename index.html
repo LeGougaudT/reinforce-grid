@@ -597,17 +597,17 @@
                             updateAgent2Data(envSpAgentA2, actionAgentA1);
                             stateAgentA2 = envSpAgentA2.getState();
                             actionAgentA2 = spAgentA2.act(stateAgentA2);
-                            envSpAgentA2.area = actionAgentA2;
+                            envSpAgentA2.area = parseInt(""+envSpAgentA1.area+actionAgentA2);
                             
                             // Agent A3            
                             updateAgent3Data(envSpAgentA3, actionAgentA1, actionAgentA2);
                             stateAgentA3 = envSpAgentA3.getState();
                             actionAgentA3 = spAgentA3.act(stateAgentA3);
-                            envSpAgentA3.area = actionAgentA3;
+                            envSpAgentA3.area = parseInt(""+envSpAgentA1.area+actionAgentA2+actionAgentA3);
                             
                             ccA = getCell(actionAgentA1,1) + getCell(actionAgentA2,2) + getCell(actionAgentA3,3);// ONLY FOR SIZE = 27
                             cellClicked(ccA);
-                            judgeA.computeRewardSpatial(actionAgentA1, actionAgentA2, actionAgentA3, ccA);
+                            judgeA.computeRewardSpatial();
                             updatePuck(ccA, 1, 0);
                             prevRewardSpatial = judgeA.getRewardSpatial();
                         }
@@ -659,17 +659,17 @@
                                 updateAgent2Data(envSpAgentB2, actionAgentB1);
                                 stateAgentB2 = envSpAgentB2.getState();
                                 actionAgentB2 = spAgentB2.act(stateAgentB2);
-                                envSpAgentB2.area = actionAgentB2;
+                                envSpAgentB2.area = parseInt(""+envSpAgentB1.area+actionAgentB2);
 
                                 // Agent 3            
                                 updateAgent3Data(envSpAgentB3, actionAgentB1, actionAgentB2);
                                 stateAgentB3 = envSpAgentB3.getState();
                                 actionAgentB3 = spAgentB3.act(stateAgentB3);
-                                envSpAgentB3.area = actionAgentB3;
+                                envSpAgentB3.area = parseInt(""+envSpAgentB2.area+actionAgentB3);
 
                                 ccB = getCell(actionAgentB1,1) + getCell(actionAgentB2,2) + getCell(actionAgentB3,3);// ONLY FOR SIZE = 27
                                 cellClicked(ccB);
-                                judgeB.computeRewardSpatial(actionAgentB1, actionAgentB2, actionAgentB3, ccB);
+                                judgeB.computeRewardSpatial();
                                 updatePuck(ccB, 2, 0);
                                 prevRewardSpatial = judgeB.getRewardSpatial();
                             }
