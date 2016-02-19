@@ -17,11 +17,21 @@ var J = {};
         this.entHistColor;
         this.entAction;
         this.entHumanAgent;
+        this.entActionHistory = [];
+        this.entHumanAgentHistory = [];
         
         //Goal
         this.colorG = 0;
-        this.freqActionG = 0;
-        this.freqJ1J2G = 0;
+        
+        this.valuesAction = new Object();
+        this.valuesAction.min = 0;
+        this.valuesAction.max = 0;
+        this.valuesAction.target = this.valuesAction.min;
+        
+        this.valuesJ1J2 = new Object();        
+        this.valuesJ1J2.min = 0;
+        this.valuesJ1J2.max = 0;
+        this.valuesJ1J2.target =  this.valuesJ1J2.min;
         
         //Final reward
         this.rewardT = 0;
@@ -63,8 +73,35 @@ var J = {};
             var entAction = this.computeEntropy(freqAction);
             var entHumanAgent = this.computeEntropy(freqJ1J2);
             
-            this.rewardT = -Math.abs(entAction - this.freqActionG);
-            this.rewardT += -Math.abs(entHumanAgent - this.freqJ1J2G);
+            // save entropy values in history
+            if(this.entActionHistory.length >= 1000){
+                this.entActionHistory = this.entActionHistory.slice(1);
+                this.entHumanAgentHistory = this.entHumanAgentHistory.slice(1);
+            }
+            this.entActionHistory.push(entAction);
+            this.entHumanAgentHistory.push(entHumanAgent);
+            
+            // update max and min entropy values if needed
+            if(entAction < this.valuesAction.min){
+                this.valuesAction.min = entAction;
+            }
+            if(entAction > this.valuesAction.max){
+                this.valuesAction.max = entAction;
+            }
+            
+            if(entHumanAgent < this.valuesJ1J2.min){
+                this.valuesJ1J2.min = entHumanAgent;
+            }
+            if(entHumanAgent > this.valuesJ1J2.max){
+                this.valuesJ1J2.max = entHumanAgent;
+            }
+            
+            
+            // check the stability on the entropy history
+            this.checkStability(this.entActionHistory,this.valuesAction);
+            
+            this.rewardT = -Math.abs(entAction - this.target);
+            this.rewardT += -Math.abs(entHumanAgent - this.target);
         },
         computeRewardSpatial:function(a1,a2,a3,cell){
             var cellHuman = this.env.cClick;
@@ -95,7 +132,11 @@ var J = {};
 //          var entA1 = this.computeEntropy(this.a1, 8);
 //          var entA2 = this.computeEntropy(this.a2, 8);
 //          var entA3 = this.computeEntropy(this.a3, 8);
-            this.rewardS = -Math.abs(entHistColor - this.colorG);
+            //this.rewardS = -Math.abs(entHistColor - this.colorG);
+            this.rewardS = 0;
+            
+            ///////////////////////////////////////////////////////////////////////
+            
         },
         updateHistogramColor:function(){
             var tab = [];
@@ -112,9 +153,24 @@ var J = {};
                 }
             }
             return entropy;
+        },
+        checkStability:function(entropyHist,obj){
+            if(entropyHist.length >= 1000){
+                var sum = 0;
+                for(var i = 0;i < entropyHist.length;i++){
+                    sum += entropyHist[i];
+                }
+                var meanEntropy = sum/(entropyHist.length);
+
+                if((Math.abs(meanEntropy - obj.min)) < 0.1){
+                    obj.target = obj.max;
+                }
+                else if(Math.abs(meanEntropy - obj.max) < 0.1){
+                    obj.target = obj.min;
+                }
+            }    
         }
+        
     };
     global.Judge = Judge;
 })(J);
-
-
