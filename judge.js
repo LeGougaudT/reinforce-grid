@@ -96,12 +96,11 @@ var J = {};
                 this.valuesJ1J2.max = entHumanAgent;
             }
             
-            
             // check the stability on the entropy history
             this.checkStability(this.entActionHistory,this.valuesAction);
             
-            this.rewardT = -Math.abs(entAction - this.target);
-            this.rewardT += -Math.abs(entHumanAgent - this.target);
+            this.rewardT = -Math.abs(entAction - this.valuesAction.target);
+            this.rewardT += -Math.abs(entHumanAgent - this.valuesAction.target);
         },
         computeRewardSpatial:function(a1,a2,a3,cell){
             var cellHuman = this.env.cClick;
