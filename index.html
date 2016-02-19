@@ -577,10 +577,10 @@
                         envTeAgentA.sampleNextState(actionAgentA);
                         
                         if(nbAgent === 2){
-                            envTeAgentA.freqJ1J2 = envTeAgentA.cptAgent / envTeAgentB.cptAgent;
+                            envTeAgentA.freqJ1J2 = envTeAgentA.cptAgent / (envTeAgentA.cptAgent + envTeAgentB.cptAgent);
                         }
                         else{
-                            envTeAgentA.freqJ1J2 = cptHuman / envTeAgentA.cptAgent;
+                            envTeAgentA.freqJ1J2 = cptHuman / (envTeAgentA.cptAgent + cptHuman);
                         }
                         
                         judgeA.computeRewardTemporal();
@@ -644,7 +644,7 @@
                             actionAgentB = teAgentB.act(stateAgentB);
                             envTeAgentB.sampleNextState(actionAgentB);
                             
-                            envTeAgentB.freqJ1J2 = envTeAgentB.cptAgent / envTeAgentA.cptAgent;
+                            envTeAgentB.freqJ1J2 = envTeAgentB.cptAgent / (envTeAgentA.cptAgent + envTeAgentB.cptAgent);
                             judgeB.computeRewardTemporal();
 
                             if(actionAgentB){
@@ -674,7 +674,7 @@
                                 prevRewardSpatial = judgeB.getRewardSpatial();
                             }
                             else{
-                                judgeA.setRewardSpatial(prevRewardSpatial);
+                                judgeB.setRewardSpatial(prevRewardSpatial);
                             }
                             reward = judgeB.getReward();
                             if(actionAgentB){
@@ -733,6 +733,9 @@
 
             judgeA = new J.Judge(env, envTeAgentA, envSpAgentA1, envSpAgentA2, envSpAgentA3);
             judgeB = new J.Judge(env, envTeAgentB, envSpAgentB1, envSpAgentB2, envSpAgentB3);
+            
+            judgeA.freqJ1J2G = 0;
+            judgeB.freqJ1J2G = 1;
             
             eval($("#spec").val())
             teAgentA = new RL.DQNAgent(envTeAgentA, spec);
@@ -920,7 +923,7 @@
         }
 
         function goslow() {
-            steps_per_tick = 0.2;
+            steps_per_tick = 1;
         }
         
         function checkNbAgent(){
