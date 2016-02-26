@@ -1,7 +1,9 @@
 var J = {};
 (function(global) {
   "use strict";
-  
+    
+    // init of a judge
+    // save environement, compute rewards and heck the stability of the system
     var Judge = function(env, envTeAgent, envSpAgent1, envSpAgent2, envSpAgent3) {
         this.env = env; // store pointer to environment
         this.envTeAgent = envTeAgent; // store pointer to environment
@@ -46,6 +48,7 @@ var J = {};
         this.reset();
     };
     Judge.prototype = {
+        // init judge
         reset: function() {
             //Spatial env history
             this.a1 = [];
@@ -53,8 +56,7 @@ var J = {};
             this.a3 = [];
         },
         getReward:function(){
-            //return this.rewardT+this.rewardS;
-            return this.rewardS;
+            return this.rewardT + this.rewardS;
         },
         getRewardSpatial:function(){
             return this.rewardS;
@@ -76,33 +78,6 @@ var J = {};
             this.freqActionHistory.push(state[0]);
             this.freqJ1J2History.push(state[1]);
             
-            //reward - pour freqAction
-//            var entAction = this.computeEntropy(freqAction);
-//            var entHumanAgent = this.computeEntropy(freqJ1J2);
-            
-            // save entropy values in history
-//            if(this.entActionHistory.length >= 1000){
-//                this.entActionHistory = this.entActionHistory.slice(1);
-//                this.entHumanAgentHistory = this.entHumanAgentHistory.slice(1);
-//            }
-//            this.entActionHistory.push(entAction);
-//            this.entHumanAgentHistory.push(entHumanAgent);
-            
-//            // update max and min entropy values if needed
-//            if(entAction < this.valuesAction.min){
-//                this.valuesAction.min = entAction;
-//            }
-//            if(entAction > this.valuesAction.max){
-//                this.valuesAction.max = entAction;
-//            }
-//            
-//            if(entHumanAgent < this.valuesJ1J2.min){
-//                this.valuesJ1J2.min = entHumanAgent;
-//            }
-//            if(entHumanAgent > this.valuesJ1J2.max){
-//                this.valuesJ1J2.max = entHumanAgent;
-//            }
-            
             // check the stability on the entropy history
             this.checkStability(this.freqActionHistory,this.valuesAction);
             this.checkStability(this.freqJ1J2History,this.valuesJ1J2);
@@ -117,8 +92,7 @@ var J = {};
                         
             // Global entropy TODO
             var spatialEntropy = this.computeEntropy(histColor);
-//            this.rewardS = -Math.abs(spatialEntropy - this.spatialValues.target);
-            this.rewardS = -Math.abs(spatialEntropy - 0);
+            this.rewardS = -Math.abs(spatialEntropy - this.spatialValues.target);
         },
         updateHistogramColor:function(){
             var tab = [];
@@ -136,6 +110,7 @@ var J = {};
             }
             return entropy;
         },
+        // check if reward is stable
         checkStability:function(history,obj){
             obj.cpt = obj.cpt + 1;
             if(history.length >= 1000){
@@ -145,6 +120,7 @@ var J = {};
                 }
                 var mean = sum/(history.length);
                 
+                // compute standard deviation
                 var distanceRelative = 0;
                 for(var i = 0;i < history.length;i++){
                     distanceRelative += Math.pow((history[i]-mean), 2);
@@ -154,6 +130,7 @@ var J = {};
                 
                 distanceRelative = Math.sqrt(distanceRelative);
                 
+                // compute the mean last 10 reward
                 var sumLast = 0;
                 for(var i = 1; i <=10; i++){
                     sumLast += history[history.length-i];

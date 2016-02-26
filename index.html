@@ -43,7 +43,7 @@
       // Num of color in COLOR
       var nbAgent = 1;
       var NBCOLOR = 3;
-      var env;
+      var env;// global environnent 
       var size = 27;// global size of the grid
       var rs = {}; // all svg/g rectangle
       var trs = {}; // all svg/g text reward
@@ -142,6 +142,7 @@
             this.reset();
         }
         ColorGrid.prototype = {
+            // init of grid
             reset: function() {
                 this.white = 729;
                 this.red = 0;
@@ -257,23 +258,6 @@
             }else {
                 d3SpAgentB.attr('cx', ppx * cs + cs / 2).attr('cy', ppy * cs + cs / 2);
             }
-            // Color of the puck depends on the reward
-            //            // color spAgent by reward
-            //            var vv = r + 0.5;
-            //            var ms = 255.0;
-            //            if (vv > 0) {
-            //                g = 255;
-            //                r = 255 - vv * ms;
-            //                b = 255 - vv * ms;
-            //            }
-            //            if (vv < 0) {
-            //                g = 255 + vv * ms;
-            //                r = 255;
-            //                b = 255 + vv * ms;
-            //            }
-            //            
-            //            var vcol = 'rgb(' + Math.floor(r) + ',' + Math.floor(g) + ',' + Math.floor(b) + ')';
-            //            d3spAgent.attr('fill', vcol);
         }
         
         // Return next color in enum COLOR
@@ -307,16 +291,9 @@
             }
             
             r.attr('fill', getColor(nColor));
-
-            // skip set up of reward indication
-            // write reward texts
-            //          var rv = env.Rarr[s];
-            //          var tr = trs[s];
-            //          if(rv !== 0) {
-            //            tr.text('R ' + rv.toFixed(1))
-            //          }
         }
         
+        // return actual cell color
         var getColor = function(nColor){
             var color = '';
             switch (nColor) {
@@ -336,6 +313,7 @@
             return color;
         }
         
+        // update of agent data 1
         var updateAgent1Data = function(envSpAgent1){
             envSpAgent1.white = 0;
             envSpAgent1.red = 0;
@@ -435,7 +413,8 @@
                 }
             }
         }
-
+        
+        // update of agent data 2
         var updateAgent2Data = function(envSpAgent2,a1){
             envSpAgent2.white = 0;
             envSpAgent2.red = 0;
@@ -505,6 +484,7 @@
             }
         }
 
+        // update agent data 3
         var updateAgent3Data = function(envSpAgent3, a1, a2){
             envSpAgent3.white = 0;
             envSpAgent3.red = 0;
@@ -531,6 +511,7 @@
             }
         }
 
+        // return actual cell number
         var getCell = function(v, n){
             var ret = 0;
             switch(n){
@@ -566,6 +547,7 @@
         var flottB = 0;
         var prevRewardSpatial = 0;
 
+        // launch learning of different agent
         function togglelearn() {
             if (sid === -1) {
                 sid = setInterval(function() {
@@ -576,6 +558,7 @@
                         actionAgentA = teAgentA.act(stateAgentA);
                         envTeAgentA.sampleNextState(actionAgentA);
                         
+                        // 2 players in the experience
                         if(nbAgent === 2){
                             envTeAgentA.freqJ1J2 = envTeAgentA.cptAgent / (envTeAgentA.cptAgent + envTeAgentB.cptAgent);
                         }
@@ -585,6 +568,7 @@
                         
                         judgeA.computeRewardTemporal();
                         
+                        // if judge want to play
                         if(actionAgentA){
                             
                             // Agent A1
@@ -719,6 +703,7 @@
         var envSpAgentB2;
         var envSpAgentB3;
         
+        // init all configuration of the project
         function start() {
             env = new ColorGrid();
             envTeAgentA = new TemporalAgent();
@@ -788,6 +773,7 @@
             renderJax();
         }
 
+        // modifying parameters of an agent according to spec
         function resetAgent() {
             eval($("#spec").val());
             teAgentA = new RL.DQNAgent(envTeAgentA, spec);
@@ -801,6 +787,7 @@
             spAgentB3 = new RL.DQNAgent(envSpAgentB3, spec);
         }
 
+        // load agent (WIP)
         function loadAgent() {
             $.getJSON("spAgentzoo/puckspAgent.json", function(data) {
                 spAgentA1.fromJSON(data); // corss your fingers...
@@ -813,13 +800,13 @@
                 spAgentA1.alpha = 0;
             });
         }
-    
+        // TODO
         // function saveAgent() {
         //  $("#mysterybox").fadeIn();
         //  $("#mysterybox").val(JSON.stringify(envSpAgentA1.toJSON()));
         // }
 
-        // For plot stuff
+        // for plot stuff
         var nflot = 40;
         function initFlot() {
             var containerA = $("#flotrewardA");
